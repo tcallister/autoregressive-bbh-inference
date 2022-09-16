@@ -7,6 +7,8 @@ import jax.numpy as jnp
 from jax.config import config
 config.update("jax_enable_x64", True)
 import arviz as az
+import numpy as np
+np.random.seed(114)
 from autoregressive_mass_models import ar_lnm1_q
 from getData import *
 
@@ -77,11 +79,11 @@ full_lnm1_q_data = {'all_lnm1_samples':all_lnm1_samples[lnm1_sorting],
 # Set up NUTS sampler over our likelihood
 init_values = {
             'ar_lnm1_std':1.8,
-            'ar_lnm1_tau':0.75,
+            'log_ar_lnm1_tau':0.,
             'ar_q_std':1.2,
-            'ar_q_tau':0.4
+            'log_ar_q_tau':0.
             }
-kernel = NUTS(ar_lnm1_q,init_strategy=init_to_value(values=init_values))
+kernel = NUTS(ar_lnm1_q,init_strategy=init_to_value(values=init_values),dense_mass=[("ar_lnm1_std","log_ar_lnm1_tau"),("ar_q_std","log_ar_q_tau")])
 mcmc = MCMC(kernel,num_warmup=100,num_samples=100,num_chains=nChains)
 
 # Choose a random key and run over our model
