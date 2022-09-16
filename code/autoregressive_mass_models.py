@@ -47,13 +47,10 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     ar_lnm1_std = numpyro.sample("ar_lnm1_std",dist.HalfNormal(1))
     numpyro.factor("ar_lnm1_std_prior",ar_lnm1_std**2/2. - (ar_lnm1_std/1.177)**4)
 
-    # Next the mean
-    ar_lnm1_mu = numpyro.sample("ar_lnm1_mu",dist.Normal(0,3))
-
     # Finally the autocorrelation length
     log_ar_lnm1_tau = numpyro.sample("log_ar_lnm1_tau",dist.Normal(0,1))
     ar_lnm1_tau = numpyro.deterministic("ar_lnm1_tau",10.**log_ar_lnm1_tau)
-    numpyro.factor("lnm1_regularization",-(ar_lnm1_std/ar_lnm1_tau)**2/2.)
+    numpyro.factor("lnm1_regularization",-(ar_lnm1_std/jnp.sqrt(ar_lnm1_tau))**2/2.)
 
     # Sample an initial rate density at reference point
     ln_f_lnm1_ref_unscaled = numpyro.sample("ln_f_lnm1_ref_unscaled",dist.Normal(0,1))
@@ -90,7 +87,7 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     # Next the autocorrelation length
     log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(0,1))
     ar_q_tau = numpyro.deterministic("ar_q_tau",10.**log_ar_q_tau)
-    numpyro.factor("q_regularization",-(ar_q_std/ar_q_tau)**2/2.)
+    numpyro.factor("q_regularization",-(ar_q_std/jnp.sqrt(ar_q_tau))**2/2.)
 
     # Choose an initial reference value
     ln_f_q_ref_unscaled = numpyro.sample("ln_f_q_ref_unscaled",dist.Normal(0,1))
@@ -237,15 +234,12 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     # First get variance of the process
     # We are imposing a steep power-law prior on this parameter
     ar_lnm_std = numpyro.sample("ar_lnm_std",dist.HalfNormal(1))
-    #numpyro.factor("ar_lnm_std_prior",ar_lnm_std**2/2. - ar_lnm_std**4/8.75)
+    numpyro.factor("ar_lnm_std_prior",ar_lnm_std**2/2. - (ar_lnm_std/1.177)**4)
 
-    # Finally the autocorrelation length
-    # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
-    logit_ar_lnm_tau = numpyro.sample("logit_ar_lnm_tau",dist.Normal(0,logit_std))
-    ar_lnm_tau,jac_ar_lnm_tau = get_value_from_logit(logit_ar_lnm_tau,0.5,3.)
-    numpyro.factor("p_ar_lnm_tau",logit_ar_lnm_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_lnm_tau))
-    numpyro.deterministic("ar_lnm_tau",ar_lnm_tau)
-    numpyro.factor("lnm_regularization",-(ar_lnm_std/ar_lnm_tau)**2/(2.*0.5**2))
+    # Next the autocorrelation length
+    log_ar_lnm_tau = numpyro.sample("log_ar_lnm_tau",dist.Normal(0,1))
+    ar_lnm_tau = numpyro.deterministic("ar_lnm_tau",10.**log_ar_lnm_tau)
+    numpyro.factor("lnm_regularization",-(ar_lnm_std/ar_lnm_tau)**2/2.)
 
     # Sample an initial rate density at reference point
     ln_f_lnm_ref_unscaled = numpyro.sample("ln_f_lnm_ref_unscaled",dist.Normal(0,1))
@@ -275,7 +269,12 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     #######################################
 
     ar_q_std = numpyro.sample("ar_q_std",dist.HalfNormal(1))
-    #numpyro.factor("ar_q_std_prior",ar_q_std**2/2. - ar_q_std**4/8.75)
+    numpyro.factor("ar_q_std_prior",ar_q_std**2/2. - (ar_q_std/1.177)**4)
+
+    # Next the autocorrelation length
+    log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(0,1))
+    ar_q_tau = numpyro.deterministic("ar_q_tau",10.**log_ar_q_tau)
+    numpyro.factor("q_regularization",-(ar_q_std/ar_q_tau)**2/2.)
 
     logit_ar_q_tau = numpyro.sample("logit_ar_q_tau",dist.Normal(0,logit_std))
     ar_q_tau,jac_ar_q_tau = get_value_from_logit(logit_ar_q_tau,0.2,1.)
