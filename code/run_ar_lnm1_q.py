@@ -8,7 +8,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 import arviz as az
 import numpy as np
-np.random.seed(114)
+np.random.seed(111)
 from autoregressive_mass_models import ar_lnm1_q
 from getData import *
 
@@ -81,13 +81,14 @@ init_values = {
             'ar_lnm1_std':1.8,
             'log_ar_lnm1_tau':0.,
             'ar_q_std':1.2,
-            'log_ar_q_tau':0.
+            'log_ar_q_tau':0.,
+            'mu_chi':0.1
             }
 kernel = NUTS(ar_lnm1_q,init_strategy=init_to_value(values=init_values),dense_mass=[("ar_lnm1_std","log_ar_lnm1_tau"),("ar_q_std","log_ar_q_tau")])
 mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
 
 # Choose a random key and run over our model
-rng_key = random.PRNGKey(200)
+rng_key = random.PRNGKey(201)
 rng_key,rng_key_ = random.split(rng_key)
 mcmc.run(rng_key_,sampleDict,injectionDict,full_lnm1_q_data)
 mcmc.print_summary()
