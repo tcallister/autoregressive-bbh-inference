@@ -239,7 +239,7 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     # Next the autocorrelation length
     log_ar_lnm_tau = numpyro.sample("log_ar_lnm_tau",dist.Normal(0,1))
     ar_lnm_tau = numpyro.deterministic("ar_lnm_tau",10.**log_ar_lnm_tau)
-    numpyro.factor("lnm_regularization",-(ar_lnm_std/ar_lnm_tau)**2/2.)
+    numpyro.factor("lnm_regularization",-(ar_lnm_std/jnp.sqrt(ar_lnm_tau))**2/(2.*0.5**2))
 
     # Sample an initial rate density at reference point
     ln_f_lnm_ref_unscaled = numpyro.sample("ln_f_lnm_ref_unscaled",dist.Normal(0,1))
@@ -248,15 +248,15 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     # Generate forward steps
     lnm_steps_forward = numpyro.sample("lnm_steps_forward",dist.Normal(0,1),sample_shape=(lnm_deltas_high.size,))
     lnm_phis_forward = jnp.exp(-lnm_deltas_high/ar_lnm_tau)
-    lnm_ws_forward = jnp.sqrt(1.-jnp.exp(-2.*lnm_deltas_high/ar_lnm_tau))*(ar_lnm_std*lnm_steps_forward)
+    lnm_ws_forward = jnp.sqrt(1.-jnp.exp(-2.*lnm_deltas_high/ar_lnm_tau))*ar_lnm_std*lnm_steps_forward
     final,ln_f_lnms_high = lax.scan(build_ar1,ln_f_lnm_ref,jnp.transpose(jnp.array([lnm_phis_forward,lnm_ws_forward]))) 
     ln_f_lnms = jnp.append(ln_f_lnm_ref,ln_f_lnms_high)
 
     # Generate backward steps
     lnm_steps_backward = numpyro.sample("lnm_steps_backward",dist.Normal(0,1),sample_shape=(lnm_deltas_low.size,))
     lnm_phis_backward = jnp.exp(-lnm_deltas_low/ar_lnm_tau)
-    lnm_ws_backward = jnp.sqrt(1.-jnp.exp(-2.*lnm_deltas_low/ar_lnm_tau))*(ar_lnm_std*lnm_steps_backward)
-    final,ln_f_lnms_low = lax.scan(cumsum,ln_f_lnm_ref,jnp.transpose(jnp.array([lnm_phis_backward,lnm_ws_backward])))
+    lnm_ws_backward = jnp.sqrt(1.-jnp.exp(-2.*lnm_deltas_low/ar_lnm_tau))*ar_lnm_std*lnm_steps_backward
+    final,ln_f_lnms_low = lax.scan(build_ar1,ln_f_lnm_ref,jnp.transpose(jnp.array([lnm_phis_backward,lnm_ws_backward])))
     ln_f_lnms = jnp.append(ln_f_lnms_low[::-1],ln_f_lnms)
 
     # Exponentiate and save
@@ -274,15 +274,7 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     # Next the autocorrelation length
     log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(0,1))
     ar_q_tau = numpyro.deterministic("ar_q_tau",10.**log_ar_q_tau)
-    numpyro.factor("q_regularization",-(ar_q_std/ar_q_tau)**2/2.)
-
-    logit_ar_q_tau = numpyro.sample("logit_ar_q_tau",dist.Normal(0,logit_std))
-    ar_q_tau,jac_ar_q_tau = get_value_from_logit(logit_ar_q_tau,0.2,1.)
-    numpyro.factor("p_ar_q_tau",logit_ar_q_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_q_tau))
-    numpyro.deterministic("ar_q_tau",ar_q_tau)
-    numpyro.factor("q_regularization",-(ar_q_std/ar_q_tau)**2/(2.*0.5**2))
-
-    ar_q_mu = numpyro.sample("ar_q_mu",dist.Normal(0,3))
+    numpyro.factor("q_regularization",-(ar_q_std/jnp.sqrt(ar_q_tau))**2/(2.*0.5**2))
 
     # Sample an initial rate density at reference point
     ln_f_q_ref_unscaled = numpyro.sample("ln_f_q_ref_unscaled",dist.Normal(0,1))
@@ -291,12 +283,12 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     # Generate backward steps
     q_steps_backward = numpyro.sample("q_steps_backward",dist.Normal(0,1),sample_shape=(q_deltas.size,))
     q_phis_backward = jnp.exp(-q_deltas/ar_q_tau)
-    q_ws_backward = jnp.sqrt(1.-jnp.exp(-2.*q_deltas/ar_q_tau))*(ar_q_std*q_steps_backward)# + ar_q_mu)
-    final,ln_f_qs_low = lax.scan(cumsum,ln_f_q_ref,jnp.transpose(jnp.array([q_phis_backward,q_ws_backward])))
+    q_ws_backward = jnp.sqrt(1.-jnp.exp(-2.*q_deltas/ar_q_tau))*ar_q_std*q_steps_backward
+    final,ln_f_qs_low = lax.scan(build_ar1,ln_f_q_ref,jnp.transpose(jnp.array([q_phis_backward,q_ws_backward])))
     ln_f_qs = jnp.append(ln_f_qs_low[::-1],ln_f_q_ref)
 
     # Exponentiate and save
-    f_qs = jnp.exp(ln_f_qs + ar_q_mu)
+    f_qs = jnp.exp(ln_f_qs)
     f_qs_eventSorted = f_qs[full_lnm_q_data['q_reverseSorting']]
     numpyro.deterministic("f_qs",f_qs)
 
@@ -304,18 +296,14 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     # Sample our baseline hyperparameters for mass ratio, redshift, and component spins
     ####################################################################################
 
-    logit_mu_chi = numpyro.sample("logit_mu_chi",dist.Normal(0,logit_std))
-    logit_sig_cost = numpyro.sample("logit_sig_cost",dist.Normal(0,logit_std))
+    logR20 = numpyro.sample("logR20",dist.Uniform(-6,3))
+    R20 = numpyro.deterministic("R20",10.**logR20)
+
+    # Sample our baseline hyperparameters for mass ratio, redshift, and component spins
+    mu_chi = numpyro.sample("mu_chi",TransformedUniform(0.,1.))
+    sig_cost = numpyro.sample("sig_cost",TransformedUniform(0.3,2.))
     kappa = numpyro.sample("kappa",dist.Normal(0,5))
     logsig_chi = numpyro.sample("logsig_chi",dist.Uniform(-1.,0.))
-
-    # Transform logit parameters as necessary
-    mu_chi,jac_mu_chi = get_value_from_logit(logit_mu_chi,0.,1.)
-    sig_cost,jac_sig_cost = get_value_from_logit(logit_sig_cost,0.3,2)
-    numpyro.deterministic("mu_chi",mu_chi)
-    numpyro.deterministic("sig_cost",sig_cost)
-    numpyro.factor("p_mu_chi",logit_mu_chi**2/(2.*logit_std**2)-jnp.log(jac_mu_chi))
-    numpyro.factor("p_sig_cost",logit_sig_cost**2/(2.*logit_std**2)-jnp.log(jac_sig_cost))
 
     # Fixed params
     mu_cost = 1.
@@ -345,7 +333,7 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     p_cost1_det = truncatedNormal(cost1_det,mu_cost,sig_cost,-1,1)
     p_cost2_det = truncatedNormal(cost2_det,mu_cost,sig_cost,-1,1)
     p_z_det = dVdz_det*(1.+z_det)**(kappa-1.)/p_z_norm
-    R_pop_det = f_m1_det*f_m2_det*f_q_det*p_z_det*p_a1_det*p_a2_det*p_cost1_det*p_cost2_det
+    R_pop_det = R20*f_m1_det*f_m2_det*f_q_det*p_z_det*p_a1_det*p_a2_det*p_cost1_det*p_cost2_det
 
     # Form ratio of proposed weights over draw weights
     inj_weights = R_pop_det/(p_draw/2.)
@@ -354,7 +342,6 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     nEff_inj = jnp.sum(inj_weights)**2/jnp.sum(inj_weights**2)
     nObs = 1.0*len(sampleDict)
     numpyro.deterministic("nEff_inj_per_event",nEff_inj/nObs)
-    #numpyro.factor("nEff_penalty",1./(jnp.exp(-(nEff_inj/(4.*nObs)-1.)) - 1.))
 
     # Compute net detection efficiency and add to log-likelihood
     Nexp = jnp.sum(inj_weights)/injectionDict['nTrials']
@@ -378,7 +365,7 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
         p_cost1 = truncatedNormal(cost1_sample,mu_cost,sig_cost,-1,1)
         p_cost2 = truncatedNormal(cost2_sample,mu_cost,sig_cost,-1,1)
         p_z = dVdz_sample*(1.+z_sample)**(kappa-1.)/p_z_norm
-        R_pop = f_m1*f_m2*f_q*p_z*p_a1*p_a2*p_cost1*p_cost2
+        R_pop = R20*f_m1*f_m2*f_q*p_z*p_a1*p_a2*p_cost1*p_cost2
 
         mc_weights = R_pop/priors
 
