@@ -48,7 +48,7 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     numpyro.factor("ar_lnm1_std_prior",ar_lnm1_std**2/2. - (ar_lnm1_std/1.177)**4)
 
     # Finally the autocorrelation length
-    log_ar_lnm1_tau = numpyro.sample("log_ar_lnm1_tau",dist.Normal(0,1))
+    log_ar_lnm1_tau = numpyro.sample("log_ar_lnm1_tau",dist.Normal(0,0.75))
     ar_lnm1_tau = numpyro.deterministic("ar_lnm1_tau",10.**log_ar_lnm1_tau)
     numpyro.factor("lnm1_regularization",-(ar_lnm1_std/jnp.sqrt(ar_lnm1_tau))**2/(2.*0.5**2))
 
@@ -85,7 +85,7 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     numpyro.factor("ar_q_std_prior",ar_q_std**2/2. - (ar_q_std/1.177)**4)
 
     # Next the autocorrelation length
-    log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(0,1))
+    log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(0,0.75))
     ar_q_tau = numpyro.deterministic("ar_q_tau",10.**log_ar_q_tau)
     numpyro.factor("q_regularization",-(ar_q_std/jnp.sqrt(ar_q_tau))**2/(2.*0.5**2))
 
@@ -237,7 +237,7 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     numpyro.factor("ar_lnm_std_prior",ar_lnm_std**2/2. - (ar_lnm_std/1.177)**4)
 
     # Next the autocorrelation length
-    log_ar_lnm_tau = numpyro.sample("log_ar_lnm_tau",dist.Normal(0,1))
+    log_ar_lnm_tau = numpyro.sample("log_ar_lnm_tau",dist.Normal(0,0.75))
     ar_lnm_tau = numpyro.deterministic("ar_lnm_tau",10.**log_ar_lnm_tau)
     numpyro.factor("lnm_regularization",-(ar_lnm_std/jnp.sqrt(ar_lnm_tau))**2/(2.*0.5**2))
 
@@ -272,7 +272,7 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     numpyro.factor("ar_q_std_prior",ar_q_std**2/2. - (ar_q_std/1.177)**4)
 
     # Next the autocorrelation length
-    log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(0,1))
+    log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(0,0.75))
     ar_q_tau = numpyro.deterministic("ar_q_tau",10.**log_ar_q_tau)
     numpyro.factor("q_regularization",-(ar_q_std/jnp.sqrt(ar_q_tau))**2/(2.*0.5**2))
 
@@ -300,7 +300,7 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     R20 = numpyro.deterministic("R20",10.**logR20)
 
     # Sample our baseline hyperparameters for mass ratio, redshift, and component spins
-    mu_chi = numpyro.sample("mu_chi",TransformedUniform(0.,1.))
+    mu_chi = numpyro.sample("mu_chi",dist.Uniform(0.,1.))
     sig_cost = numpyro.sample("sig_cost",TransformedUniform(0.3,2.))
     kappa = numpyro.sample("kappa",dist.Normal(0,5))
     logsig_chi = numpyro.sample("logsig_chi",dist.Uniform(-1.,0.))
