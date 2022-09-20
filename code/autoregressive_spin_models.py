@@ -38,18 +38,9 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
 
     # Finally the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
-    """
-    logit_std = 2.5
-    logit_ar_chi_tau = numpyro.sample("logit_ar_chi_tau",dist.Normal(0,logit_std))
-    ar_chi_tau,jac_ar_chi_tau = get_value_from_logit(logit_ar_chi_tau,0.1,2.)
-    numpyro.factor("p_ar_chi_tau",logit_ar_chi_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_chi_tau))
-    numpyro.deterministic("ar_chi_tau",ar_chi_tau)
-    numpyro.factor("regularization",-(ar_chi_std/ar_chi_tau)**2/(2.*0.5**2))
-    """
-    log_ar_chi_tau = numpyro.sample("log_ar_chi_tau",dist.Normal(0.,0.1))
+    log_ar_chi_tau = numpyro.sample("log_ar_chi_tau",dist.Normal(0.,1))
     ar_chi_tau = numpyro.deterministic("ar_chi_tau",10.**log_ar_chi_tau)
-    numpyro.factor("regularization",-(ar_chi_std/ar_chi_tau)**2/(2.*0.5**2))
-    #numpyro.factor("regularization",-jnp.log(ar_chi_std/jnp.sqrt(ar_chi_tau))**2/(2.*0.25**2))
+    numpyro.factor("chi_regularization",-(ar_chi_std/jnp.sqrt(ar_chi_tau))**2/(2.*0.5**2))
 
     # Sample an initial rate density at reference point
     ln_f_chi_ref_unscaled = numpyro.sample("ln_f_chi_ref_unscaled",dist.Normal(0,1))
@@ -59,17 +50,15 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     chi_steps_forward = numpyro.sample("chi_steps_forward",dist.Normal(0,1),sample_shape=(chi_deltas_high.size,))
     chi_phis_forward = jnp.exp(-chi_deltas_high/ar_chi_tau)
     chi_ws_forward = jnp.sqrt(1.-jnp.exp(-2.*chi_deltas_high/ar_chi_tau))*(ar_chi_std*chi_steps_forward)
-    final,ln_f_chis_high = lax.scan(cumsum,ln_f_chi_ref,jnp.transpose(jnp.array([chi_phis_forward,chi_ws_forward]))) 
+    final,ln_f_chis_high = lax.scan(build_ar1,ln_f_chi_ref,jnp.transpose(jnp.array([chi_phis_forward,chi_ws_forward]))) 
     ln_f_chis = jnp.append(ln_f_chi_ref,ln_f_chis_high)
 
     # Generate backward steps
     chi_steps_backward = numpyro.sample("chi_steps_backward",dist.Normal(0,1),sample_shape=(chi_deltas_low.size,))
     chi_phis_backward = jnp.exp(-chi_deltas_low/ar_chi_tau)
     chi_ws_backward = jnp.sqrt(1.-jnp.exp(-2.*chi_deltas_low/ar_chi_tau))*(ar_chi_std*chi_steps_backward)
-    final,ln_f_chis_low = lax.scan(cumsum,ln_f_chi_ref,jnp.transpose(jnp.array([chi_phis_backward,chi_ws_backward])))
+    final,ln_f_chis_low = lax.scan(build_ar1,ln_f_chi_ref,jnp.transpose(jnp.array([chi_phis_backward,chi_ws_backward])))
     ln_f_chis = jnp.append(ln_f_chis_low[::-1],ln_f_chis)
-
-    #numpyro.factor("chi_elastic",-(jnp.max(ln_f_chis)-jnp.min(ln_f_chis))**2/(2.*3**2))
 
     # Exponentiate and save
     f_chis = jnp.exp(ln_f_chis)
@@ -86,18 +75,9 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     numpyro.factor("ar_cost_std_prior",ar_cost_std**2/2. - (ar_cost_std/1.177)**4)
 
     # Finally the autocorrelation length
-    """
-    logit_cost_tau = numpyro.sample("logit_ar_cost_tau",dist.Normal(0,logit_std))
-    ar_cost_tau,jac_cost_tau = get_value_from_logit(logit_cost_tau,0.2,3.)
-    numpyro.deterministic("ar_cost_tau",ar_cost_tau)
-    numpyro.factor("p_cost_tau",logit_cost_tau**2/(2.*logit_std**2)-jnp.log(jac_cost_tau))
-    numpyro.factor("cost_regularization",-(ar_cost_std/ar_cost_tau)**2/(2.*0.5**2))
-    """
-
-    log_ar_cost_tau = numpyro.sample("log_ar_cost_tau",dist.Normal(0.,0.1))
+    log_ar_cost_tau = numpyro.sample("log_ar_cost_tau",dist.Normal(0.,1.))
     ar_cost_tau = numpyro.deterministic("ar_cost_tau",10.**log_ar_cost_tau)
-    numpyro.factor("cost_regularization",-(ar_cost_std/ar_cost_tau)**2/(2.*0.5**2))
-    #numpyro.factor("cost_regularization",-jnp.log(ar_cost_std/jnp.sqrt(ar_cost_tau))**2/(2.*0.25**2))
+    numpyro.factor("cost_regularization",-(ar_cost_std/jnp.sqrt(ar_cost_tau))**2/(2.*0.5**2))
 
     ln_f_cost_ref_unscaled = numpyro.sample("ln_f_cost_ref_unscaled",dist.Normal(0,1))
     ln_f_cost_ref = ln_f_cost_ref_unscaled*ar_cost_std
@@ -106,10 +86,8 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     cost_steps_backward = numpyro.sample("cost_steps_backward",dist.Normal(0,1),sample_shape=(cost_deltas.size,))
     cost_phis_backward = jnp.exp(-cost_deltas/ar_cost_tau)
     cost_ws_backward = jnp.sqrt(-jnp.expm1(-2.*cost_deltas/ar_cost_tau))*(ar_cost_std*cost_steps_backward)
-    final,ln_f_costs = lax.scan(cumsum,ln_f_cost_ref,jnp.transpose(jnp.array([cost_phis_backward,cost_ws_backward])))
+    final,ln_f_costs = lax.scan(build_ar1,ln_f_cost_ref,jnp.transpose(jnp.array([cost_phis_backward,cost_ws_backward])))
     ln_f_costs = jnp.append(ln_f_costs[::-1],ln_f_cost_ref)
-
-    #numpyro.factor("cost_elastic",-(jnp.max(ln_f_costs)-jnp.min(ln_f_costs))**2/(2.*3**2))
 
     # Exponentiate and save
     f_cost = jnp.exp(ln_f_costs)
@@ -148,31 +126,13 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     mu_m1 = numpyro.sample("mu_m1",dist.Uniform(20,50))
     mMin = numpyro.sample("mMin",dist.Uniform(5,15))
     bq = numpyro.sample("bq",dist.Normal(0,4))
-    kappa = numpyro.sample("kappa",dist.Normal(0,4))
+    kappa = numpyro.sample("kappa",dist.Normal(0,5))
 
-    logit_sig_m1 = numpyro.sample("logit_sig_m1",dist.Normal(0,logit_std))
-    logit_log_f_peak = numpyro.sample("logit_log_f_peak",dist.Normal(0,logit_std))
-    logit_mMax = numpyro.sample("logit_mMax",dist.Normal(0,logit_std))
-    logit_log_dmMin = numpyro.sample("logit_log_dmMin",dist.Normal(0,logit_std))
-    logit_log_dmMax = numpyro.sample("logit_log_dmMax",dist.Normal(0,logit_std))
-
-    sig_m1,jac_sig_m1 = get_value_from_logit(logit_sig_m1,1.5,15.)
-    log_f_peak,jac_log_f_peak = get_value_from_logit(logit_log_f_peak,-3,0.)
-    mMax,jac_mMax = get_value_from_logit(logit_mMax,50.,100.)
-    log_dmMin,jac_log_dmMin = get_value_from_logit(logit_log_dmMin,-1,1)
-    log_dmMax,jac_log_dmMax = get_value_from_logit(logit_log_dmMax,0.5,1.5)
-
-    numpyro.deterministic("sig_m1",sig_m1)
-    numpyro.deterministic("log_f_peak",log_f_peak)
-    numpyro.deterministic("mMax",mMax)
-    numpyro.deterministic("log_dmMin",log_dmMin)
-    numpyro.deterministic("log_dmMax",log_dmMax)
-
-    numpyro.factor("p_sig_m1",logit_sig_m1**2/(2.*logit_std**2)-jnp.log(jac_sig_m1))
-    numpyro.factor("p_log_f_peak",logit_log_f_peak**2/(2.*logit_std**2)-jnp.log(jac_log_f_peak))
-    numpyro.factor("p_mMax",logit_mMax**2/(2.*logit_std**2)-jnp.log(jac_mMax))
-    numpyro.factor("p_log_dmMin",logit_log_dmMin**2/(2.*logit_std**2)-jnp.log(jac_log_dmMin))
-    numpyro.factor("p_log_dmMax",logit_log_dmMax**2/(2.*logit_std**2)-jnp.log(jac_log_dmMax))
+    sig_m1 = numpyro.sample("sig_m1",TransformedUniform(2.,15.))
+    log_f_peak = numpyro.sample("log_f_peak",TransformedUniform(-3.,0.))
+    mMax = numpyro.sample("mMax",TransformedUniform(50.,100.))
+    log_dmMin = numpyro.sample("log_dmMin",TransformedUniform(-1.,1.))
+    log_dmMax = numpyro.sample("log_dmMax",TransformedUniform(0.5,1.5))
 
     # Normalization
     p_m1_norm = massModel(20.,alpha,mu_m1,sig_m1,10.**log_f_peak,mMax,mMin,10.**log_dmMax,10.**log_dmMin)
@@ -203,7 +163,6 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     nEff_inj = jnp.sum(inj_weights)**2/jnp.sum(inj_weights**2)
     nObs = 1.0*len(sampleDict)
     numpyro.deterministic("nEff_inj_per_event",nEff_inj/nObs)
-    #numpyro.factor("nEff_penalty",1./(jnp.exp(-(nEff_inj/(4.*nObs)-1.)**4.) - 1.))
 
     # Compute net detection efficiency and add to log-likelihood
     Nexp = jnp.sum(inj_weights)/injectionDict['nTrials']
