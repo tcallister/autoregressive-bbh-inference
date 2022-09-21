@@ -95,7 +95,7 @@ init_values = {
 kernel = NUTS(ar_spinMagTilt,\
                 dense_mass=[("ar_chi_std","log_ar_chi_tau"),("ar_cost_std","log_ar_cost_tau")],
                 init_strategy=init_to_value(values=init_values))
-mcmc = MCMC(kernel,num_warmup=100,num_samples=100,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=200,num_samples=200,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(170817)
