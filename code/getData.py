@@ -5,7 +5,7 @@ from utilities import massModel
 
 def reweighting_function_archi(m1,m2,a1,a2,cost1,cost2,z,dVdz):
 
-    kappa = 2.
+    kappa = 1.
     alpha = -3.7
     mu_m1 = 35.
     sig_m1 = 3.
@@ -14,7 +14,7 @@ def reweighting_function_archi(m1,m2,a1,a2,cost1,cost2,z,dVdz):
     mMin = 9.
     dmMax = 10.
     dmMin = 5.
-    bq = 0.75
+    bq = 0.
 
     p_m1 = massModel(m1,alpha,mu_m1,sig_m1,f_peak,mMax,mMin,dmMax,dmMin)
     p_m2 = m2**bq/(m1**(1.+bq) - 2.**(1.+bq))
