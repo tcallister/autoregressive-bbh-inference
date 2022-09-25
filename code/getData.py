@@ -188,6 +188,7 @@ def getSamples(sample_limit=1000,bbh_only=True,reweight=True,weighting_function=
             print("Removing ",event)
             sampleDict.pop(event)
 
+    mMin = 0.
     for event in sampleDict:
 
         if reweight:
@@ -222,5 +223,11 @@ def getSamples(sample_limit=1000,bbh_only=True,reweight=True,weighting_function=
         for key in sampleDict[event].keys():
             if key!='downselection_Neff':
                 sampleDict[event][key] = sampleDict[event][key][inds_to_keep]
+
+        new_mMin = np.min(sampleDict[event]['m1'])
+        if new_mMin>mMin:
+            mMin = new_mMin
+
+    print("!!!!!!",mMin)
         
     return sampleDict
