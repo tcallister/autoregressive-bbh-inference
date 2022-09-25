@@ -8,6 +8,8 @@ import jax.numpy as jnp
 from jax.config import config
 config.update("jax_enable_x64", True)
 import arviz as az
+import numpy as np
+np.random.seed(11)
 from autoregressive_spin_models import ar_spinMagTilt
 from getData import *
 
@@ -55,13 +57,15 @@ total_Samples += nInjections
 chi_sorting = np.argsort(all_chi_samples)
 toJitter_sortedInds = np.where(np.abs(np.diff(all_chi_samples[chi_sorting]))<1e-12)[0]
 toJitter_inds = chi_sorting[toJitter_sortedInds]
+print(toJitter_inds[:20])
+for ind in toJitter_inds[:20]:
+    print(all_chi_samples[ind-1],all_chi_samples[ind],all_chi_samples[ind+1])
 all_chi_samples[toJitter_inds] += np.random.normal(loc=0,scale=1e-10,size=len(toJitter_inds))
 
 # Get sorting information and differences between adjacent samples
 chi_sorting = np.argsort(all_chi_samples)
 chi_sorting_into_events = np.argsort(chi_sorting)
 chi_deltas = np.diff(all_chi_samples[chi_sorting])
-print(jnp.min(chi_deltas))
 
 # Next jitter cost values
 cost_sorting = np.argsort(all_cost_samples)
@@ -73,6 +77,7 @@ all_cost_samples[toJitter_inds] += np.random.normal(loc=0,scale=1e-10,size=len(t
 cost_sorting = np.argsort(all_cost_samples)
 cost_sorting_into_events = np.argsort(cost_sorting)
 cost_deltas = np.diff(all_cost_samples[cost_sorting])
+print(jnp.min(chi_deltas),jnp.min(cost_deltas))
 
 # Package into dictionary
 full_chi_data = {'chi_allSamples':all_chi_samples[chi_sorting],
@@ -88,14 +93,14 @@ full_chi_data = {'chi_allSamples':all_chi_samples[chi_sorting],
 # Set up NUTS sampler over our likelihood
 init_values = {
             'ar_chi_std':1.,
-            'log_ar_chi_tau':0.,
             'ar_cost_std':0.5,
-            'log_ar_cost_tau':0.,
             }
+#            'log_ar_chi_tau':0.,
+#            'log_ar_cost_tau':0.,
 kernel = NUTS(ar_spinMagTilt,\
-                dense_mass=[("ar_chi_std","log_ar_chi_tau"),("ar_cost_std","log_ar_cost_tau")],
+                dense_mass=[("ar_chi_std","logit_ar_chi_tau"),("ar_cost_std","logit_ar_cost_tau")],
                 init_strategy=init_to_value(values=init_values))
-mcmc = MCMC(kernel,num_warmup=100,num_samples=100,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=400,num_samples=600,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(170817)

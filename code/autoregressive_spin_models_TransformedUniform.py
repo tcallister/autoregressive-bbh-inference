@@ -4,6 +4,7 @@ import jax.numpy as jnp
 from jax.scipy.special import erf
 from jax import soft_pmap,vmap,lax
 import numpy as np
+from custom_distributions import *
 from utilities import *
 
 def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
@@ -39,10 +40,7 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
     #log_ar_chi_tau = numpyro.sample("log_ar_chi_tau",dist.Normal(0.,1))
     #ar_chi_tau = numpyro.deterministic("ar_chi_tau",10.**log_ar_chi_tau)
-    logit_ar_chi_tau = numpyro.sample("logit_ar_chi_tau",dist.Normal(0,logit_std))
-    ar_chi_tau,jac_ar_chi_tau = get_value_from_logit(logit_ar_chi_tau,0.1,2.)
-    numpyro.factor("p_ar_chi_tau",logit_ar_chi_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_chi_tau))
-    numpyro.deterministic("ar_chi_tau",ar_chi_tau)
+    ar_chi_tau = numpyro.sample("ar_chi_tau",TransformedUniform(0.2,3.))
     numpyro.factor("chi_regularization",-(ar_chi_std/jnp.sqrt(ar_chi_tau))**2/(2.*0.5**2))
 
     # Sample an initial rate density at reference point
@@ -80,10 +78,7 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     # Finally the autocorrelation length
     #log_ar_cost_tau = numpyro.sample("log_ar_cost_tau",dist.Normal(0.,1.))
     #ar_cost_tau = numpyro.deterministic("ar_cost_tau",10.**log_ar_cost_tau)
-    logit_ar_cost_tau = numpyro.sample("logit_ar_cost_tau",dist.Normal(0,logit_std))
-    ar_cost_tau,jac_ar_cost_tau = get_value_from_logit(logit_ar_cost_tau,0.2,4.)
-    numpyro.factor("p_ar_cost_tau",logit_ar_cost_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_cost_tau))
-    numpyro.deterministic("ar_cost_tau",ar_cost_tau)
+    ar_cost_tau = numpyro.sample("ar_cost_tau",TransformedUniform(0.3,3.))
     numpyro.factor("cost_regularization",-(ar_cost_std/jnp.sqrt(ar_cost_tau))**2/(2.*0.5**2))
 
     ln_f_cost_ref_unscaled = numpyro.sample("ln_f_cost_ref_unscaled",dist.Normal(0,1))
@@ -121,35 +116,25 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     logR20 = numpyro.sample("logR20",dist.Uniform(-6,3))
     R20 = numpyro.deterministic("R20",10.**logR20)
 
+    #mu_m1 = 35.
+    #sig_m1 = 5.
+    #log_f_peak = -2.5
+    #mMin = 10.
+    #mMax = 80.
+    #log_dmMin = 0.5
+    #log_dmMax = 1.5
+
     alpha = numpyro.sample("alpha",dist.Normal(0,6))
     mu_m1 = numpyro.sample("mu_m1",dist.Uniform(20,50))
     mMin = numpyro.sample("mMin",dist.Uniform(5,15))
     bq = numpyro.sample("bq",dist.Normal(0,4))
     kappa = numpyro.sample("kappa",dist.Normal(0,5))
 
-    logit_sig_m1 = numpyro.sample("logit_sig_m1",dist.Normal(0,logit_std))
-    logit_log_f_peak = numpyro.sample("logit_log_f_peak",dist.Normal(0,logit_std))
-    logit_mMax = numpyro.sample("logit_mMax",dist.Normal(0,logit_std))
-    logit_log_dmMin = numpyro.sample("logit_log_dmMin",dist.Normal(0,logit_std))
-    logit_log_dmMax = numpyro.sample("logit_log_dmMax",dist.Normal(0,logit_std))
-
-    sig_m1,jac_sig_m1 = get_value_from_logit(logit_sig_m1,2.,15.)
-    log_f_peak,jac_log_f_peak = get_value_from_logit(logit_log_f_peak,-3,0.)
-    mMax,jac_mMax = get_value_from_logit(logit_mMax,50.,100.)
-    log_dmMin,jac_log_dmMin = get_value_from_logit(logit_log_dmMin,-1,1)
-    log_dmMax,jac_log_dmMax = get_value_from_logit(logit_log_dmMax,0.5,1.5)
-
-    numpyro.deterministic("sig_m1",sig_m1)
-    numpyro.deterministic("log_f_peak",log_f_peak)
-    numpyro.deterministic("mMax",mMax)
-    numpyro.deterministic("log_dmMin",log_dmMin)
-    numpyro.deterministic("log_dmMax",log_dmMax)
-
-    numpyro.factor("p_sig_m1",logit_sig_m1**2/(2.*logit_std**2)-jnp.log(jac_sig_m1))
-    numpyro.factor("p_log_f_peak",logit_log_f_peak**2/(2.*logit_std**2)-jnp.log(jac_log_f_peak))
-    numpyro.factor("p_mMax",logit_mMax**2/(2.*logit_std**2)-jnp.log(jac_mMax))
-    numpyro.factor("p_log_dmMin",logit_log_dmMin**2/(2.*logit_std**2)-jnp.log(jac_log_dmMin))
-    numpyro.factor("p_log_dmMax",logit_log_dmMax**2/(2.*logit_std**2)-jnp.log(jac_log_dmMax))
+    sig_m1 = numpyro.sample("sig_m1",TransformedUniform(2.,15.))
+    log_f_peak = numpyro.sample("log_f_peak",TransformedUniform(-3.,0.))
+    mMax = numpyro.sample("mMax",TransformedUniform(50.,100.))
+    log_dmMin = numpyro.sample("log_dmMin",TransformedUniform(-1.,1.))
+    log_dmMax = numpyro.sample("log_dmMax",TransformedUniform(0.5,1.5))
 
     # Normalization
     p_m1_norm = massModel(20.,alpha,mu_m1,sig_m1,10.**log_f_peak,mMax,mMin,10.**log_dmMax,10.**log_dmMin)
