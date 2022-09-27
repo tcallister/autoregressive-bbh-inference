@@ -9,7 +9,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 import arviz as az
 import numpy as np
-np.random.seed(11)
+np.random.seed(119)
 from autoregressive_spin_models import ar_spinMagTilt
 from getData import *
 
@@ -100,18 +100,18 @@ init_values = {
 kernel = NUTS(ar_spinMagTilt,\
                 dense_mass=[("ar_chi_std","logit_ar_chi_tau"),("ar_cost_std","logit_ar_cost_tau")],
                 init_strategy=init_to_value(values=init_values))
-mcmc = MCMC(kernel,num_warmup=400,num_samples=600,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=400,num_samples=400,num_chains=nChains)
 
 # Choose a random key and run over our model
-rng_key = random.PRNGKey(170817)
+rng_key = random.PRNGKey(2002)
 rng_key,rng_key_ = random.split(rng_key)
 mcmc.run(rng_key_,sampleDict,injectionDict,full_chi_data)
 mcmc.print_summary()
 
 # Save out data
 data = az.from_numpyro(mcmc)
-#az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-pop-modeling-data/alt_ar_chi.cdf")
-#np.save('/mnt/ceph/users/tcallister/autoregressive-pop-modeling-data/alt_ar_chi_data.npy',full_chi_data)
-az.to_netcdf(data,"../data/ar_chi_cost.cdf")
-np.save('../data/ar_chi_cost_data.npy',full_chi_data)
+az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_chi_cost_400_400.cdf")
+np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_chi_cost_data_400_400.npy',full_chi_data)
+#az.to_netcdf(data,"../data/ar_chi_cost.cdf")
+#np.save('../data/ar_chi_cost_data.npy',full_chi_data)
 
