@@ -16,7 +16,7 @@ from getData import *
 
 # Get dictionaries holding injections and posterior samples
 injectionDict = getInjections(reweight=False)
-sampleDict = getSamples(sample_limit=2000,reweight=False)#,weighting_function=reweighting_function_arlnm1_q)
+sampleDict = getSamples(sample_limit=2000,reweight=True,weighting_function=reweighting_function_archi)
 
 # Instantiate array to hold all combined primary mass samples
 total_z_Samples = 0
