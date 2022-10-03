@@ -1,0 +1,15 @@
+axes.labelsize : 18
+axes.grid : True
+grid.color : grey
+grid.linestyle : :
+xtick.labelsize : 14
+xtick.direction : in
+ytick.direction : in
+ytick.labelsize : 14
+font.family : serif
+font.serif : Computer Modern
+font.monospace : Computer Modern Typewriter
+figure.figsize : 6,4.5
+text.usetex : True
+legend.frameon : False
+legend.fontsize : 14
