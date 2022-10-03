@@ -35,10 +35,10 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     # Finally the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
     logit_ar_z_tau = numpyro.sample("logit_ar_z_tau",dist.Normal(0,logit_std))
-    ar_z_tau,jac_ar_z_tau = get_value_from_logit(logit_ar_z_tau,0.1,4.)
+    ar_z_tau,jac_ar_z_tau = get_value_from_logit(logit_ar_z_tau,0.1,2.)
     numpyro.factor("p_ar_z_tau",logit_ar_z_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_z_tau))
     numpyro.deterministic("ar_z_tau",ar_z_tau)
-    numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))**2/(2.))
+    numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))**2)
 
     # Sample an initial rate density at reference point
     ln_f_z_ref_unscaled = numpyro.sample("ln_f_z_ref_unscaled",dist.Normal(0,1))
