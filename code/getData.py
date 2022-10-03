@@ -111,7 +111,7 @@ def reweighting_function_arlnm1_q(m1,m2,a1,a2,cost1,cost2,z,dVdz):
 
     return (p_m1*p_m2*p_a1*p_a2*p_cost1*p_cost2*p_z)
 
-def getInjections(sample_limit=10000,reweight=False,weighting_function=reweighting_function_arlnm1):
+def getInjections(sample_limit=10000,spin='component',reweight=False,weighting_function=reweighting_function_arlnm1):
 
     """
     Function to load and preprocess found injections for use in numpyro likelihood functions.
@@ -135,15 +135,23 @@ def getInjections(sample_limit=10000,reweight=False,weighting_function=reweighti
 
         m1 = injectionDict['m1']
         m2 = injectionDict['m2']
-        a1 = injectionDict['a1']
-        a2 = injectionDict['a2']
-        cost1 = injectionDict['cost1']
-        cost2 = injectionDict['cost2']
         z = injectionDict['z']
         dVdz = injectionDict['dVdz']
-        pDraw = injectionDict['p_draw_m1m2z']*injectionDict['p_draw_a1a2cost1cost2']
 
-        p_new = weighting_function(m1,m2,a1,a2,cost1,cost2,z,dVdz)
+        if spin=='component':
+            a1 = injectionDict['a1']
+            a2 = injectionDict['a2']
+            cost1 = injectionDict['cost1']
+            cost2 = injectionDict['cost2']
+            pDraw = injectionDict['p_draw_m1m2z']*injectionDict['p_draw_a1a2cost1cost2']
+            p_new = weighting_function(m1,m2,a1,a2,cost1,cost2,z,dVdz)
+
+        elif spin=='effective':
+            Xeff = injectionDict['Xeff']
+            Xp = injectionDict['Xp']
+            pDraw = injectionDict['p_draw_m1m2z']*injectionDict['p_draw_chiEff_chiP']
+            p_new = weighting_function(m1,m2,Xeff,Xp,z,dVdz)
+
         downselection_draw_weights = (p_new/pDraw)/injectionDict['nTrials']
         nEff_downselection = np.sum(downselection_draw_weights)**2/np.sum(downselection_draw_weights**2)
 
@@ -151,7 +159,11 @@ def getInjections(sample_limit=10000,reweight=False,weighting_function=reweighti
         injectionDict['downselection_Neff'] = nEff_downselection
         injectionDict['nTrials'] = sample_limit
         injectionDict['p_draw_m1m2z'] = new_pDraw
-        injectionDict['p_draw_a1a2cost1cost2'] = np.ones(new_pDraw.size)
+
+        if spin=='component':
+            injectionDict['p_draw_a1a2cost1cost2'] = np.ones(new_pDraw.size)
+        elif spin=='effective':
+            injectionDict['p_draw_chiEff_chiP'] = np.ones(new_pDraw.size)
         
         print(nEff_downselection)
         inds_to_keep = np.random.choice(np.arange(new_pDraw.size),size=sample_limit,replace=True,p=downselection_draw_weights/np.sum(downselection_draw_weights))
@@ -161,7 +173,7 @@ def getInjections(sample_limit=10000,reweight=False,weighting_function=reweighti
 
     return injectionDict
 
-def getSamples(sample_limit=1000,bbh_only=True,reweight=True,weighting_function=reweighting_function_arlnm1):
+def getSamples(sample_limit=1000,bbh_only=True,spin='component',reweight=True,weighting_function=reweighting_function_arlnm1):
 
     """
     Function to load and preprocess BBH posterior samples for use in numpyro likelihood functions.
@@ -195,20 +207,31 @@ def getSamples(sample_limit=1000,bbh_only=True,reweight=True,weighting_function=
 
             m1 = np.array(sampleDict[event]['m1'])
             m2 = np.array(sampleDict[event]['m2'])
-            a1 = np.array(sampleDict[event]['a1'])
-            a2 = np.array(sampleDict[event]['a2'])
-            cost1 = np.array(sampleDict[event]['cost1'])
-            cost2 = np.array(sampleDict[event]['cost2'])
             z = np.array(sampleDict[event]['z'])
             dVdz = np.array(sampleDict[event]['dVc_dz'])
-            prior = np.array(sampleDict[event]['z_prior'])
 
-            p_new = weighting_function(m1,m2,a1,a2,cost1,cost2,z,dVdz)
+            if spin=='component':
+
+                a1 = np.array(sampleDict[event]['a1'])
+                a2 = np.array(sampleDict[event]['a2'])
+                cost1 = np.array(sampleDict[event]['cost1'])
+                cost2 = np.array(sampleDict[event]['cost2'])
+                prior = np.array(sampleDict[event]['z_prior'])
+                p_new = weighting_function(m1,m2,a1,a2,cost1,cost2,z,dVdz)
+                sampleDict[event]['z_prior'] = p_new
+
+            elif spin=='effective':
+
+                Xeff = np.array(sampleDict[event]['Xeff'])
+                Xp = np.array(sampleDict[event]['Xp'])
+                prior = np.array(sampleDict[event]['z_prior'])*np.array(sampleDict[event]['joint_priors'])
+                p_new = weighting_function(m1,m2,a1,a2,cost1,cost2,z,dVdz)
+                sampleDict[event]['z_prior'] = p_new
+                sampleDict[event]['joint_priors'] = np.ones(Xeff.size)
+
             draw_weights = p_new/prior
             draw_weights /= np.sum(draw_weights)
             neff = np.sum(draw_weights)**2/np.sum(draw_weights**2)
-
-            sampleDict[event]['z_prior'] = p_new
 
             if neff<2.*sample_limit:
                 print(event,neff)
