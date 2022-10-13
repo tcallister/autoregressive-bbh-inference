@@ -1,5 +1,6 @@
 import numpyro
-nChains = 3
+#nChains = 3
+nChains = 1
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC,init_to_value
 from jax import random
@@ -8,7 +9,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 import arviz as az
 import numpy as np
-np.random.seed(111)
+np.random.seed(112)
 from autoregressive_redshift_models import ar_mergerRate
 from getData import *
 
@@ -16,7 +17,8 @@ from getData import *
 
 # Get dictionaries holding injections and posterior samples
 injectionDict = getInjections(reweight=False)
-sampleDict = getSamples(sample_limit=2000,reweight=True,weighting_function=reweighting_function_archi)
+#sampleDict = getSamples(sample_limit=2000,reweight=True,weighting_function=reweighting_function_archi)
+sampleDict = getSamples(sample_limit=3000,reweight=False)#,weighting_function=reweighting_function_archi)
 
 # Instantiate array to hold all combined primary mass samples
 total_z_Samples = 0
@@ -66,18 +68,19 @@ init_values = {
             }
 """
 kernel = NUTS(ar_mergerRate)#,init_strategy=init_to_value(values=init_values),dense_mass=[("ar_z_std","log_ar_z_tau"),("ar_q_std","log_ar_q_tau")])
-mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
+#mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=250,num_samples=250,num_chains=nChains)
 
 # Choose a random key and run over our model
-rng_key = random.PRNGKey(201)
+rng_key = random.PRNGKey(202)
 rng_key,rng_key_ = random.split(rng_key)
 mcmc.run(rng_key_,sampleDict,injectionDict,full_z_data)
 mcmc.print_summary()
 
 # Save out data
 data = az.from_numpyro(mcmc)
-az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_z_tauMax_2_relaxed.cdf")
-np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_z_data_tauMax_2_relaxed.npy',full_z_data)
-#az.to_netcdf(data,"../data/ar_z.cdf")
-#np.save('../data/ar_z_data.npy',full_z_data)
+#az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_z_tauMax_2_relaxed.cdf")
+#np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_z_data_tauMax_2_relaxed.npy',full_z_data)
+az.to_netcdf(data,"../data/ar_z_sfr.cdf")
+np.save('../data/ar_z_data_sfr.npy',full_z_data)
 

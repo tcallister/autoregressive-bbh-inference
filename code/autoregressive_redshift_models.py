@@ -30,15 +30,18 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     # First get variance of the process
     # We are imposing a steep power-law prior on this parameter
     ar_z_std = numpyro.sample("ar_z_std",dist.HalfNormal(1.))
-    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.177)**4)
+    #ar_z_std = numpyro.deterministic("ar_z_std",1.5)
+    #numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.177)**4)
+    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.5)**4)
 
     # Finally the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
     logit_ar_z_tau = numpyro.sample("logit_ar_z_tau",dist.Normal(0,logit_std))
-    ar_z_tau,jac_ar_z_tau = get_value_from_logit(logit_ar_z_tau,0.1,2.)
+    ar_z_tau,jac_ar_z_tau = get_value_from_logit(logit_ar_z_tau,0.2,1.5)
     numpyro.factor("p_ar_z_tau",logit_ar_z_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_z_tau))
     numpyro.deterministic("ar_z_tau",ar_z_tau)
-    numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))**2)
+    #ar_z_tau = numpyro.deterministic("ar_z_tau",0.15)
+    #numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))/2.**2)
 
     # Sample an initial rate density at reference point
     ln_f_z_ref_unscaled = numpyro.sample("ln_f_z_ref_unscaled",dist.Normal(0,1))
@@ -83,6 +86,7 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     logR20 = numpyro.sample("logR20",dist.Uniform(-6,3))
     R20 = numpyro.deterministic("R20",10.**logR20)
 
+    kappa = numpyro.sample("kappa",dist.Normal(0,3))
     alpha = numpyro.sample("alpha",dist.Normal(0,6))
     mu_m1 = numpyro.sample("mu_m1",dist.Uniform(20,50))
     mMin = numpyro.sample("mMin",dist.Uniform(5,15))
@@ -141,7 +145,7 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     p_a2_det = truncatedNormal(a2_det,mu_chi,10.**logsig_chi,0,1)
     p_cost1_det = truncatedNormal(cost1_det,mu_cost,sig_cost,-1,1)
     p_cost2_det = truncatedNormal(cost2_det,mu_cost,sig_cost,-1,1)
-    f_z_det = dVdz_det*f_zs_eventSorted[full_z_data['injections_from_allSamples']]/(1.+z_det)
+    f_z_det = dVdz_det*f_zs_eventSorted[full_z_data['injections_from_allSamples']]*(1.+z_det)**(kappa-1.)/(1.+0.2)**kappa
     R_pop_det = R20*f_m1_det*p_m2_det*f_z_det*p_a1_det*p_a2_det*p_cost1_det*p_cost2_det
 
     # Form ratio of proposed weights over draw weights
@@ -172,7 +176,7 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
         p_a2 = truncatedNormal(a2_sample,mu_chi,10.**logsig_chi,0,1)
         p_cost1 = truncatedNormal(cost1_sample,mu_cost,sig_cost,-1,1)
         p_cost2 = truncatedNormal(cost2_sample,mu_cost,sig_cost,-1,1)
-        f_z = dVdz_sample*f_zs_eventSorted[z_ar_indices]/(1.+z_sample)
+        f_z = dVdz_sample*f_zs_eventSorted[z_ar_indices]*(1.+z_sample)**(kappa-1.)/(1.+0.2)**kappa
         R_pop = R20*f_m1*p_m2*f_z*p_a1*p_a2*p_cost1*p_cost2
 
         mc_weights = R_pop/priors

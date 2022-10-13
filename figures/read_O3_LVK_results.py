@@ -1,5 +1,8 @@
 import numpy as np
 import json
+from scipy.interpolate import interp1d,interp2d
+from scipy.special import beta as bfunc
+from scipy.special import erf
 
 def read_lvk_plpeak_data():
 
@@ -17,6 +20,11 @@ def read_lvk_plpeak_data():
     plpeak_kappas = np.array(plpeak_data['posterior']['content']['lamb'])
     plpeak_Rtot = np.array(plpeak_data['posterior']['content']['rate'])
 
+    default_mu_chi = np.array(plpeak_data['posterior']['content']['mu_chi'])
+    default_sig_chi = np.sqrt(np.array(plpeak_data['posterior']['content']['sigma_chi'])) # Remember that the stored data is the variance
+    default_sig_aligned = np.array(plpeak_data['posterior']['content']['sigma_spin'])
+    default_f_aligned = np.array(plpeak_data['posterior']['content']['xi_spin'])
+
     lvk_results = {
         'alpha':plpeak_alphas,
         'mMax':plpeak_mMaxs,
@@ -27,7 +35,11 @@ def read_lvk_plpeak_data():
         'delta_m':plpeak_delta_ms,
         'bq':plpeak_betas,
         'kappa':plpeak_kappas,
-        'Rtot':plpeak_Rtot
+        'Rtot':plpeak_Rtot,
+        'mu_chi':default_mu_chi,
+        'sig_chi':default_sig_chi,
+        'sig_cost':default_sig_aligned,
+        'f_aligned':default_f_aligned
         } 
 
     return lvk_results
@@ -66,6 +78,110 @@ def plpeak_m1_q(alpha,mMax,mMin,fPeak,mu_m1,sig_m1,delta_m,bq,kappa,R,npts):
     
     return m1_grid,q_grid,R*(1.+0.2)**kappa*p_m1_q
 
+def default_spin(mu_chi,sig_chi,sig_cost,npts):
+
+    chi_grid = np.linspace(0,1,npts)
+    cost_grid = np.linspace(-1,1,npts+1)
+
+    # Transform to beta distribution parameters
+    nu = mu_chi*(1.-mu_chi)/sig_chi**2 - 1.
+    alpha = mu_chi*nu
+    beta = (1.-mu_chi)*nu
+    p_chi = chi_grid**(alpha-1.)*(1.-chi_grid)**(beta-1.)/bfunc(alpha,beta)
+    
+    p_cost_peak = np.exp(-(cost_grid-1.)**2/(2.*sig_cost**2))/np.sqrt(2.*np.pi*sig_cost**2)
+    p_cost_peak /= erf(0.)/2. - erf(-2./np.sqrt(2.*sig_cost**2))/2.
+    p_cost_iso = np.ones(cost_grid.size)/2.
+
+    return chi_grid,cost_grid,p_chi,p_cost_peak,p_cost_iso
+    
+def get_lvk_z(nTraces,m1_ref=20,nGridpoints=500):
+
+    lvk_data = read_lvk_plpeak_data()
+
+    z_grid = np.linspace(0,2,nGridpoints)
+    R_zs = np.zeros((nTraces,nGridpoints))
+
+    random_inds = np.random.choice(np.arange(lvk_data['alpha'].size),nTraces,replace=False)
+    for i in range(nTraces):
+        
+        ind = random_inds[i]
+        m1_grid,q_grid,R_m1_q = plpeak_m1_q(lvk_data['alpha'][ind],
+                             lvk_data['mMax'][ind],
+                             lvk_data['mMin'][ind],
+                             lvk_data['fPeak'][ind],
+                             lvk_data['mu_m1'][ind],
+                             lvk_data['sig_m1'][ind],
+                             lvk_data['delta_m'][ind],
+                             lvk_data['bq'][ind],
+                             lvk_data['kappa'][ind],
+                             lvk_data['Rtot'][ind],
+                             nGridpoints)
+
+        # Convert to merger rate per log mass
+        R_lnm1_q = R_m1_q*m1_grid[np.newaxis,:]
+        R_lnm1 = np.trapz(R_lnm1_q,q_grid,axis=0)
+
+        # Interpolate to reference points
+        R_z02_interpolator = interp1d(m1_grid,R_lnm1)
+        R_z02_ref = R_z02_interpolator(m1_ref)
+
+        # Rescale over z grid
+        R_zs[i,:] = R_z02_ref*(1.+z_grid)**lvk_data['kappa'][ind]/(1.+0.2)**lvk_data['kappa'][ind]
+
+    return z_grid,R_zs
+
+def get_lvk_componentSpin(nTraces,m1_ref=20,q_ref=1,nGridpoints=500):
+
+    lvk_data = read_lvk_plpeak_data()
+
+    R_chi1_chi2 = np.zeros((nTraces,nGridpoints))
+    R_cost1_cost2 = np.zeros((nTraces,nGridpoints+1))
+    p_chis = np.zeros((nTraces,nGridpoints))
+    p_costs = np.zeros((nTraces,nGridpoints+1))
+
+    random_inds = np.random.choice(np.arange(lvk_data['alpha'].size),nTraces,replace=False)
+    for i in range(nTraces):
+        
+        ind = random_inds[i]
+        m1_grid,q_grid,dR_dm1_dq = plpeak_m1_q(lvk_data['alpha'][ind],
+                             lvk_data['mMax'][ind],
+                             lvk_data['mMin'][ind],
+                             lvk_data['fPeak'][ind],
+                             lvk_data['mu_m1'][ind],
+                             lvk_data['sig_m1'][ind],
+                             lvk_data['delta_m'][ind],
+                             lvk_data['bq'][ind],
+                             lvk_data['kappa'][ind],
+                             lvk_data['Rtot'][ind],
+                             nGridpoints)
+
+        # Convert to merger rate per log mass, store
+        dR_dlnm1_dq = dR_dm1_dq*m1_grid[np.newaxis,:]
+
+        # Extract rate at reference points
+        R_interpolator = interp2d(m1_grid,q_grid,dR_dlnm1_dq)
+        dR_dlnm1_dq_ref = R_interpolator(m1_ref,q_ref)
+
+        # Get spin distribution data
+        chi_grid,cost_grid,p_chi,p_cost_peak,p_cost_iso = default_spin(lvk_data['mu_chi'][ind],lvk_data['sig_chi'][ind],lvk_data['sig_cost'][ind],nGridpoints)
+
+        # Evaluate merger rate at chi1=chi2=chi, cost1=cost2=1
+        p_cost1_cost2_1 = lvk_data['f_aligned'][ind]*p_cost_peak[-1]**2 + (1.-lvk_data['f_aligned'][ind])*p_cost_iso[-1]**2
+        p_chi1_chi2 = p_chi**2
+        R_chi1_chi2[i,:] = dR_dlnm1_dq_ref*p_cost1_cost2_1*p_chi1_chi2
+ 
+        # Evalute merger rate at chi1=chi2=0.1, cost1=cost2
+        p_cost1_cost2 = lvk_data['f_aligned'][ind]*p_cost_peak**2 + (1.-lvk_data['f_aligned'][ind])*p_cost_iso**2
+        p_chi1_chi2_01 = np.interp(0.1,chi_grid,p_chi)**2
+        R_cost1_cost2[i,:] = dR_dlnm1_dq_ref*p_cost1_cost2*p_chi1_chi2_01
+
+        # Store marginal component spin probability distributions
+        p_chis[i,:] = p_chi
+        p_costs[i,:] = lvk_data['f_aligned'][ind]*p_cost_peak + (1.-lvk_data['f_aligned'][ind])*p_cost_iso
+
+    return chi_grid,cost_grid,R_chi1_chi2,R_cost1_cost2,p_chis,p_costs
+    
 def get_lvk_m1_q(nTraces,nGridpoints=500):
 
     lvk_data = read_lvk_plpeak_data()
