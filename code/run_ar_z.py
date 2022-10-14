@@ -9,7 +9,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 import arviz as az
 import numpy as np
-np.random.seed(112)
+np.random.seed(110)
 from autoregressive_redshift_models import ar_mergerRate
 from getData import *
 
@@ -69,10 +69,10 @@ init_values = {
 """
 kernel = NUTS(ar_mergerRate)#,init_strategy=init_to_value(values=init_values),dense_mass=[("ar_z_std","log_ar_z_tau"),("ar_q_std","log_ar_q_tau")])
 #mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
-mcmc = MCMC(kernel,num_warmup=250,num_samples=250,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=500,num_samples=500,num_chains=nChains)
 
 # Choose a random key and run over our model
-rng_key = random.PRNGKey(202)
+rng_key = random.PRNGKey(200)
 rng_key,rng_key_ = random.split(rng_key)
 mcmc.run(rng_key_,sampleDict,injectionDict,full_z_data)
 mcmc.print_summary()
@@ -81,6 +81,6 @@ mcmc.print_summary()
 data = az.from_numpyro(mcmc)
 #az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_z_tauMax_2_relaxed.cdf")
 #np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_z_data_tauMax_2_relaxed.npy',full_z_data)
-az.to_netcdf(data,"../data/ar_z_sfr.cdf")
-np.save('../data/ar_z_data_sfr.npy',full_z_data)
+az.to_netcdf(data,"../data/ar_z_tmp.cdf")
+np.save('../data/ar_z_data_tmp.npy',full_z_data)
 
