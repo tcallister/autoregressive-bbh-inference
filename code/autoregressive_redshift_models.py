@@ -32,7 +32,7 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     ar_z_std = numpyro.sample("ar_z_std",dist.HalfNormal(1.))
     #ar_z_std = numpyro.deterministic("ar_z_std",1.5)
     #numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.177)**4)
-    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.8)**4)
+    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.75)**4)
 
     # Finally the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
@@ -229,7 +229,7 @@ def ar_mergerRate_variableKappa(sampleDict,injectionDict,full_z_data):
     ar_z_std = numpyro.sample("ar_z_std",dist.HalfNormal(1.))
     #ar_z_std = numpyro.deterministic("ar_z_std",1.5)
     #numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.177)**4)
-    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.8)**4)
+    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.75)**4)
 
     # Finally the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
@@ -284,7 +284,7 @@ def ar_mergerRate_variableKappa(sampleDict,injectionDict,full_z_data):
     R20 = numpyro.deterministic("R20",10.**logR20)
 
     kappa = numpyro.sample("kappa",dist.Normal(0,3))
-    alpha = numpyro.sample("alpha",dist.Normal(0,6))
+    alpha = numpyro.sample("alpha",dist.Normal(0,10))
     mu_m1 = numpyro.sample("mu_m1",dist.Uniform(20,50))
     mMin = numpyro.sample("mMin",dist.Uniform(5,15))
     bq = numpyro.sample("bq",dist.Normal(0,4))
