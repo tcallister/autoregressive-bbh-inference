@@ -44,8 +44,8 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
 
     # First sample the properties of our autoregressive process
     # First get variance of the process
-    ar_lnm1_std = numpyro.sample("ar_lnm1_std",dist.HalfNormal(1))
-    numpyro.factor("ar_lnm1_std_prior",ar_lnm1_std**2/2. - (ar_lnm1_std/1.177)**4)
+    ar_lnm1_std = numpyro.sample("ar_lnm1_std",dist.HalfNormal(2))
+    #numpyro.factor("ar_lnm1_std_prior",ar_lnm1_std**2/2. - (ar_lnm1_std/1.177)**4)
 
     # Finally the autocorrelation length
     log_ar_lnm1_tau = numpyro.sample("log_ar_lnm1_tau",dist.Normal(0,0.75))
@@ -81,8 +81,8 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
 
     # First sample the properties of our autoregressive process
     # First get variance of the process
-    ar_q_std = numpyro.sample("ar_q_std",dist.HalfNormal(1))
-    numpyro.factor("ar_q_std_prior",ar_q_std**2/2. - (ar_q_std/1.177)**4)
+    ar_q_std = numpyro.sample("ar_q_std",dist.HalfNormal(2))
+    #numpyro.factor("ar_q_std_prior",ar_q_std**2/2. - (ar_q_std/1.177)**4)
 
     # Next the autocorrelation length
     log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(0,0.75))
@@ -123,6 +123,14 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
 
     # Normalization
     p_z_norm = (1+0.2)**kappa
+
+
+    # Entropy penalization
+    p_lnm1 = f_lnm1s/jnp.trapz(f_lnm1s,all_lnm1_samples)
+    p_q = f_qs/jnp.trapz(f_qs,all_q_samples)
+    S_lnm1 = -jnp.trapz(p_lnm1*jnp.log(p_lnm1),all_lnm1_samples)
+    S_q = -jnp.trapz(p_q*jnp.log(p_q),all_q_samples)
+    numpyro.factor("entropy",S_lnm1+S_q)
 
     ###############################
     # Expected number of detections
