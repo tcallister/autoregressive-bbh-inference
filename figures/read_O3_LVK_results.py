@@ -207,3 +207,8 @@ def get_lvk_m1_q(nTraces,nGridpoints=500):
         R_m1s_qs[i,:,:] = R_m1_q
     
     return m1_grid,q_grid,R_m1s_qs
+
+if __name__=="__main__":
+
+    test = read_lvk_plpeak_data()
+    print(np.median(test['mMin']))
