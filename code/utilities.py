@@ -96,3 +96,51 @@ def build_ar1(total,new_element):
     total = phi*total+w
     return total,total
 
+def calculate_gaussian_2D(chiEff, chiP, mu_eff, sigma2_eff, mu_p, sigma2_p, cov, chi_min=-1):
+
+    """
+    Function to evaluate our bivariate gaussian probability distribution on chiEff and chiP
+    See e.g. http://mathworld.wolfram.com/BivariateNormalDistribution.html
+
+    INPUTS
+    chiEff:     Array of chi-effective values at which to evaluate probability distribution
+    chiP:       Array of chi-p values
+    mu_eff:     Mean of the BBH chi-effective distribution
+    sigma2_eff: Variance of the BBH chi-effective distribution
+    mu_p:       Mean of the BBH chi-p distribution
+    sigma2_p:   Variance of the BBH chi-p distribution
+    cov:        Degree of covariance (off-diagonal elements of the covariance matrix are cov*sigma_eff*sigma_p)
+
+    RETURNS
+    y:          Array of probability densities
+    """
+
+    dchi_p = 0.01
+    dchi_eff = (1.-chi_min)/200
+
+    chiEff_grid = np.arange(chi_min,1.+dchi_eff,dchi_eff)
+    chiP_grid = np.arange(0.,1.+dchi_p,dchi_p)
+    CHI_EFF,CHI_P = np.meshgrid(chiEff_grid,chiP_grid)
+
+
+    # We need to truncate this distribution over the range chiEff=(-1,1) and chiP=(0,1)
+    # Compute the correct normalization constant numerically, integrating over our precomputed grid from above
+    norm_grid = np.exp(-0.5/(1.-cov**2.)*(
+                    np.square(CHI_EFF-mu_eff)/sigma2_eff
+                    + np.square(CHI_P-mu_p)/sigma2_p
+                    - 2.*cov*(CHI_EFF-mu_eff)*(CHI_P-mu_p)/np.sqrt(sigma2_eff*sigma2_p)
+                    ))
+    norm = np.sum(norm_grid)*dchi_eff*dchi_p
+    if norm<=1e-12:
+        return np.zeros(chiEff.shape)
+
+    # Now evaluate the gaussian at (chiEff,chiP)
+    y = (1./norm)*np.exp(-0.5/(1.-cov**2.)*(
+                            np.square(chiEff-mu_eff)/sigma2_eff
+                            + np.square(chiP-mu_p)/sigma2_p
+                            - (2.*cov)*(chiEff-mu_eff)*(chiP-mu_p)/np.sqrt(sigma2_eff*sigma2_p)
+                            ))
+
+    y[chiEff<chi_min] = 0.
+
+    return y

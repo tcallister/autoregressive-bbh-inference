@@ -2,6 +2,8 @@ import numpy as np
 from astropy.cosmology import Planck15
 import astropy.units as u
 from utilities import massModel
+import os
+dirname = os.path.dirname(__file__)
 
 def reweighting_function_archi(m1,m2,a1,a2,cost1,cost2,z,dVdz):
 
@@ -122,7 +124,7 @@ def getInjections(sample_limit=10000,spin='component',reweight=False,weighting_f
         Dictionary containing found injections
     """
 
-    injectionFile = "injectionDict_FAR_1_in_1.pickle"
+    injectionFile = os.path.join(dirname,"injectionDict_FAR_1_in_1.pickle")
     injectionDict = np.load(injectionFile,allow_pickle=True)
 
     for key in injectionDict:
@@ -192,7 +194,8 @@ def getSamples(sample_limit=1000,bbh_only=True,spin='component',reweight=True,we
     """
 
     # Dicts with samples:
-    sampleDict = np.load("sampleDict_FAR_1_in_1_yr.pickle",allow_pickle=True)
+    sampleFile = os.path.join(dirname,"sampleDict_FAR_1_in_1_yr.pickle")
+    sampleDict = np.load(sampleFile,allow_pickle=True)
 
     non_bbh = ['GW170817','S190425z','S190426c','S190814bv','S190917u','S200105ae','S200115j']
     if bbh_only:
