@@ -1,15 +1,17 @@
-axes.labelsize : 18
+axes.labelsize : 12
 axes.grid : True
 grid.color : grey
 grid.linestyle : :
-xtick.labelsize : 14
+xtick.labelsize : 10
 xtick.direction : in
 ytick.direction : in
-ytick.labelsize : 14
+ytick.labelsize : 10
 font.family : serif
 font.serif : Computer Modern
 font.monospace : Computer Modern Typewriter
-figure.figsize : 6,4.5
+figure.figsize : 4,3
 text.usetex : True
 legend.frameon : False
-legend.fontsize : 14
+legend.fontsize : 12
+hatch.linewidth : 0.1
+hatch.color : grey
