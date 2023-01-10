@@ -203,7 +203,7 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     # Tally log-likelihoods across our catalog
     numpyro.factor("logp",jnp.sum(log_ps))
 
-def ar_mergerRate_variableKappa(sampleDict,injectionDict,full_z_data):
+def ar_mergerRate_alternateKappa(sampleDict,injectionDict,full_z_data,kappa=2):
 
     """
     Implementation of a Gaussian effective spin distribution for inference within `numpyro`
@@ -227,7 +227,7 @@ def ar_mergerRate_variableKappa(sampleDict,injectionDict,full_z_data):
     # First get variance of the process
     # We are imposing a steep power-law prior on this parameter
     ar_z_std = numpyro.sample("ar_z_std",dist.HalfNormal(1.))
-    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.5)**4)
+    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.75)**4)
 
     # Finally the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
@@ -279,7 +279,7 @@ def ar_mergerRate_variableKappa(sampleDict,injectionDict,full_z_data):
     logR20 = numpyro.sample("logR20",dist.Uniform(-6,3))
     R20 = numpyro.deterministic("R20",10.**logR20)
 
-    kappa = numpyro.sample("kappa",dist.Normal(0,3))
+    #kappa = numpyro.sample("kappa",dist.Normal(0,3))
     alpha = numpyro.sample("alpha",dist.Normal(0,10))
     mu_m1 = numpyro.sample("mu_m1",dist.Uniform(20,50))
     mMin = numpyro.sample("mMin",dist.Uniform(5,15))
