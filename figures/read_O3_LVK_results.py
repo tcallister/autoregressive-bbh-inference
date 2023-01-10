@@ -258,6 +258,7 @@ def default_spin(mu_chi,sig_chi,sig_cost,npts):
     
 def get_lvk_z(nTraces,m1_ref=20,nGridpoints=500):
 
+    # Get posterior samples
     lvk_data = read_lvk_plpeak_data()
 
     z_grid = np.linspace(0,2,nGridpoints)
@@ -281,11 +282,13 @@ def get_lvk_z(nTraces,m1_ref=20,nGridpoints=500):
 
         # Convert to merger rate per log mass
         R_lnm1_q = R_m1_q*m1_grid[np.newaxis,:]
-        R_lnm1 = np.trapz(R_lnm1_q,q_grid,axis=0)
+        #R_lnm1 = np.trapz(R_lnm1_q,q_grid,axis=0)
+        R_lnm1 = R_lnm1_q[-1,:]
 
         # Interpolate to reference points
         R_z02_interpolator = interp1d(m1_grid,R_lnm1)
         R_z02_ref = R_z02_interpolator(m1_ref)
+        #R_z02_ref = np.sum(R_m1_q)*(m1_grid[1]-m1_grid[0])*(q_grid[1]-q_grid[0])
 
         # Rescale over z grid
         R_zs[i,:] = R_z02_ref*(1.+z_grid)**lvk_data['kappa'][ind]/(1.+0.2)**lvk_data['kappa'][ind]
@@ -371,25 +374,32 @@ def get_lvk_m1_q(nTraces,nGridpoints=500):
 
 def get_lvk_gaussian_spin():
 
+    # Get posterior samples
     lvk_results = read_lvk_gaussian_spin_data()
 
-    # Load dictionary of injections and posterior samples, which we will need in order to sample rate
+    # Load dictionary of injections and posterior samples, which we will need in order to resample rate
     injectionDict = getInjections(sample_limit=50000,reweight=False)
     sampleDict = getSamples(sample_limit=3000,reweight=False)
     nObs = len(sampleDict)*1.
 
+    print(injectionDict['m1'].size,"!!!")
+
+    # Grid of dVdz values, which will be needed to compute total merger rate by integrating over redshift
     z_grid = np.arange(0.01,2.31,0.01)
     dVdz_grid = 4.*np.pi*Planck15.differential_comoving_volume(z_grid).to(u.Gpc**3/u.sr).value
     z_grid = np.concatenate([[0.],z_grid]) 
     dVdz_grid = np.concatenate([[0.],dVdz_grid])
 
-    R_refs = np.zeros(lvk_results['bq'].size)
-
+    # Grid over which we will define and normalize effective spin distribution
     Xeff_grid = np.linspace(-1,1,500)
     Xp_grid = np.linspace(0,1,499)
     XEFF,XP = np.meshgrid(Xeff_grid,Xp_grid)
-    p_Xeff_Xp = np.zeros((R_refs.size,Xeff_grid.size,Xp_grid.size))
+    p_Xeff_Xp = np.zeros((lvk_results['bq'].size,Xeff_grid.size,Xp_grid.size))
 
+    # Instantiate array to hold resampled rates
+    R_refs = np.zeros(lvk_results['bq'].size)
+
+    # Loop across population posterior samples
     for i in range(lvk_results['bq'].size):
 
         bq = lvk_results['bq'][i]
@@ -405,7 +415,7 @@ def get_lvk_gaussian_spin():
         sig_p = lvk_results['chiP_std'][i]
         rho = lvk_results['rho'][i]
 
-        # Evaluate normalized probability distribution over m1 and m2
+        # Evaluate normalized probability distribution over m1 and m2 of injections
         p_inj_m1 = f_peak*np.exp(-(injectionDict['m1']-mu_m1)**2/(2.*sig_m1**2))/np.sqrt(2.*np.pi*sig_m1**2) \
             + (1.-f_peak)*(1.+alpha)*injectionDict['m1']**alpha/(mMax**(1.+alpha) - 5.**(1.+alpha))
         p_inj_m2 = (1.+bq)*injectionDict['m2']**bq/(injectionDict['m1']**(1.+bq) - 5.**(1.+bq))
@@ -419,6 +429,7 @@ def get_lvk_gaussian_spin():
         p_inj_z = (1.+injectionDict['z'])**(kappa-1.)*injectionDict['dVdz']/p_z_norm
 
         # Finally, compute spin probability distribution
+        # This is internally normalized
         p_inj_chi = calculate_gaussian_2D(injectionDict['Xeff'],injectionDict['Xp'],\
                        mu_eff,sig_eff**2,mu_p,sig_p**2,rho)
 
@@ -426,7 +437,8 @@ def get_lvk_gaussian_spin():
         xi = np.sum(p_inj_m1*p_inj_m2*p_inj_z*p_inj_chi/(injectionDict['p_draw_m1m2z']*injectionDict['p_draw_chiEff_chiP']))/injectionDict['nTrials']
 
         # Next, draw an overall intrinsic number of events that occurred in our observation time
-        log_Ntot_grid = np.linspace(8,15,10000)
+        #log_Ntot_grid = np.linspace(8,15,10000)
+        log_Ntot_grid = np.linspace(np.log(nObs/xi)-3,np.log(nObs/xi)+3,10000)
         Ntot_grid = np.exp(log_Ntot_grid)
         logp_Ntot_grid = nObs*np.log(xi*Ntot_grid)-xi*Ntot_grid
         logp_Ntot_grid -= np.max(logp_Ntot_grid)
@@ -436,6 +448,7 @@ def get_lvk_gaussian_spin():
         cdf_Ntot = np.cumsum(p_Ntot_grid)*(log_Ntot_grid[1]-log_Ntot_grid[0])
         cdf_draw = np.random.random()
         log_Ntot = np.interp(cdf_draw,cdf_Ntot,log_Ntot_grid)
+        #print(np.log(nObs/xi),log_Ntot)
         R0 = np.exp(log_Ntot)/p_z_norm/2.
 
         #fig,ax = plt.subplots()
@@ -461,5 +474,8 @@ def get_lvk_gaussian_spin():
 
 if __name__=="__main__":
 
-    get_lvk_gaussian_spin()
+    #samps = read_lvk_plpeak_data()
+    #fPeaks = samps['plpeak_fPeaks']
 
+    get_lvk_gaussian_spin()
+    
