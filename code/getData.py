@@ -5,72 +5,6 @@ from utilities import massModel
 import os
 dirname = os.path.dirname(__file__)
 
-def reweighting_function_archi(m1,m2,a1,a2,cost1,cost2,z,dVdz):
-
-    kappa = 1.
-    alpha = -3.7
-    mu_m1 = 35.
-    sig_m1 = 3.
-    f_peak = 0.005
-    mMax = 90.
-    mMin = 9.
-    dmMax = 10.
-    dmMin = 5.
-    bq = 0.
-
-    p_m1 = massModel(m1,alpha,mu_m1,sig_m1,f_peak,mMax,mMin,dmMax,dmMin)
-    p_m2 = m2**bq/(m1**(1.+bq) - 2.**(1.+bq))
-
-    p_z = dVdz*(1.+z)**(kappa-1.)
-    z_grid = np.linspace(0,2.3,1000)
-    dVdz_grid = 4.*np.pi*Planck15.differential_comoving_volume(z_grid).to(u.Gpc**3*u.sr**(-1)).value
-    norm = np.trapz(dVdz_grid*(1.+z_grid)**(kappa-1.))
-    p_z /= norm
-
-    return p_m1*p_m2*p_z
-
-def reweighting_function_arlnm1(m1,m2,a1,a2,cost1,cost2,z,dVdz):
-
-    """
-    Function that computes weights under a fixed population similar to that preferred by
-    the ln(m1) AR1 analysis.
-    """
-
-    kappa = 3.
-    bq = 1.5
-    alpha = -2.5
-    m0 = 10.
-    f_pl = 0.3
-    f_peak_in_peak1 = 0.9
-
-    p_m1 = np.zeros_like(m1)
-    p_m1 += (1.-f_pl)*f_peak_in_peak1*np.exp(-(m1-10.)**2/(2.*0.8**2))/np.sqrt(2.*np.pi*0.8**2)
-    p_m1 += (1.-f_pl)*(1.-f_peak_in_peak1)*np.exp(-(m1-35.)**2/(2.*2.**2.))/np.sqrt(2.*np.pi*2.**2)
-    p_m1_pl = np.ones(m1.size)
-    p_m1_pl[m1<m0] = 1.
-    p_m1_pl[m1>=m0] = (m1[m1>=m0]/m0)**alpha
-    p_m1_pl /= (alpha*m0 - 2. - alpha*2.)/(1.+alpha)
-    p_m1 += f_pl*p_m1_pl 
-    p_m1[m1<2.] = 0.
-    p_m1[m1>100.] = 0.
-
-    p_m2 = m2**bq/(m1**(1.+bq)-2.**(1.+bq))
-    p_m2[m2<2.] = 0.
-    p_m2[m2>100.] = 0.
-
-    p_z = dVdz*(1.+z)**(kappa-1.)
-    z_grid = np.linspace(0,2.3,1000)
-    dVdz_grid = 4.*np.pi*Planck15.differential_comoving_volume(z_grid).to(u.Gpc**3*u.sr**(-1)).value
-    norm = np.trapz(dVdz_grid*(1.+z_grid)**(kappa-1.))
-    p_z /= norm
-
-    p_a1 = 1.
-    p_a2 = 1.
-    p_cost1 = 1./2.
-    p_cost2 = 1./2.
-
-    return (p_m1*p_m2*p_a1*p_a2*p_cost1*p_cost2*p_z)
-
 def reweighting_function_arlnm1_q(m1,m2,a1,a2,cost1,cost2,z,dVdz):
 
     """
@@ -113,7 +47,7 @@ def reweighting_function_arlnm1_q(m1,m2,a1,a2,cost1,cost2,z,dVdz):
 
     return (p_m1*p_m2*p_a1*p_a2*p_cost1*p_cost2*p_z)
 
-def getInjections(sample_limit=10000,spin='component',reweight=False,weighting_function=reweighting_function_arlnm1):
+def getInjections(sample_limit=10000,spin='component',reweight=False,weighting_function=reweighting_function_arlnm1_q):
 
     """
     Function to load and preprocess found injections for use in numpyro likelihood functions.
@@ -175,7 +109,7 @@ def getInjections(sample_limit=10000,spin='component',reweight=False,weighting_f
 
     return injectionDict
 
-def getSamples(sample_limit=1000,bbh_only=True,spin='component',reweight=True,weighting_function=reweighting_function_arlnm1):
+def getSamples(sample_limit=1000,bbh_only=True,spin='component',reweight=True,weighting_function=reweighting_function_arlnm1_q):
 
     """
     Function to load and preprocess BBH posterior samples for use in numpyro likelihood functions.

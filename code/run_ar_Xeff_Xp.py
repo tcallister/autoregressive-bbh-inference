@@ -16,7 +16,7 @@ from getData import *
 
 # Get dictionaries holding injections and posterior samples
 injectionDict = getInjections(reweight=False,spin='effective')
-sampleDict = getSamples(sample_limit=2500,reweight=False,spin='effective')#,weighting_function=reweighting_function_archi)
+sampleDict = getSamples(sample_limit=2500,reweight=False,spin='effective')
 
 # Instantiate array to hold all combined primary mass samples
 total_Xeff_Samples = 0

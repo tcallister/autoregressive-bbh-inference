@@ -16,8 +16,8 @@ from getData import *
 # Run over several chains to check convergence
 
 # Get dictionaries holding injections and posterior samples
-injectionDict = getInjections(reweight=False)#,reweight=True)
-sampleDict = getSamples(sample_limit=2000,reweight=False)#,weighting_function=reweighting_function_archi)
+injectionDict = getInjections(reweight=False)
+sampleDict = getSamples(sample_limit=2000,reweight=False)
 
 # Instantiate array to hold all combined primary mass samples
 total_lnm_Samples = 0
