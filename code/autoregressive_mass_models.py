@@ -44,8 +44,8 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
 
     # First sample the properties of our autoregressive process
     # First get variance of the process
-    ar_lnm1_std = numpyro.sample("ar_lnm1_std",dist.HalfNormal(2))
-    #numpyro.factor("ar_lnm1_std_prior",ar_lnm1_std**2/2. - (ar_lnm1_std/1.177)**4)
+    ar_lnm1_std = numpyro.sample("ar_lnm1_std",dist.HalfNormal(1))
+    numpyro.factor("ar_lnm1_std_prior",ar_lnm1_std**2/2. - (ar_lnm1_std/2.)**4/8.75)
 
     # Finally the autocorrelation length
     log_ar_lnm1_tau = numpyro.sample("log_ar_lnm1_tau",dist.Normal(0,0.75))
@@ -81,11 +81,11 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
 
     # First sample the properties of our autoregressive process
     # First get variance of the process
-    ar_q_std = numpyro.sample("ar_q_std",dist.HalfNormal(2))
-    #numpyro.factor("ar_q_std_prior",ar_q_std**2/2. - (ar_q_std/1.177)**4)
+    ar_q_std = numpyro.sample("ar_q_std",dist.HalfNormal(1))
+    numpyro.factor("ar_q_std_prior",ar_q_std**2/2. - (ar_q_std/2.)**4/8.75)
 
     # Next the autocorrelation length
-    log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(0,0.75))
+    log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(-0.3,0.5))
     ar_q_tau = numpyro.deterministic("ar_q_tau",10.**log_ar_q_tau)
     numpyro.factor("q_regularization",-(ar_q_std/jnp.sqrt(ar_q_tau))**2/(2.*0.5**2))
 
@@ -113,10 +113,14 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     R20 = numpyro.deterministic("R20",10.**logR20)
 
     # Sample our baseline hyperparameters for mass ratio, redshift, and component spins
-    mu_chi = numpyro.sample("mu_chi",TransformedUniform(0.,1.))
-    sig_cost = numpyro.sample("sig_cost",TransformedUniform(0.3,2.))
+    mu_chi = numpyro.sample("mu_chi",dist.Uniform(0.,1.))
     kappa = numpyro.sample("kappa",dist.Normal(0,5))
     logsig_chi = numpyro.sample("logsig_chi",dist.Uniform(-1.,0.))
+
+    logit_sig_cost = numpyro.sample("logit_sig_cost",dist.Normal(0,logit_std))
+    sig_cost,jac_sig_cost = get_value_from_logit(logit_sig_cost,0.3,2.)
+    numpyro.deterministic("sig_cost",sig_cost)
+    numpyro.factor("p_sig_cost",logit_sig_cost**2/(2.*logit_std**2)-jnp.log(jac_sig_cost))
 
     # Fixed params
     mu_cost = 1.
@@ -124,13 +128,12 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     # Normalization
     p_z_norm = (1+0.2)**kappa
 
-
     # Entropy penalization
-    p_lnm1 = f_lnm1s/jnp.trapz(f_lnm1s,all_lnm1_samples)
-    p_q = f_qs/jnp.trapz(f_qs,all_q_samples)
-    S_lnm1 = -jnp.trapz(p_lnm1*jnp.log(p_lnm1),all_lnm1_samples)
-    S_q = -jnp.trapz(p_q*jnp.log(p_q),all_q_samples)
-    numpyro.factor("entropy",S_lnm1+S_q)
+    #p_lnm1 = f_lnm1s/jnp.trapz(f_lnm1s,all_lnm1_samples)
+    #p_q = f_qs/jnp.trapz(f_qs,all_q_samples)
+    #S_lnm1 = -jnp.trapz(p_lnm1*jnp.log(p_lnm1),all_lnm1_samples)
+    #S_q = -jnp.trapz(p_q*jnp.log(p_q),all_q_samples)
+    #numpyro.factor("entropy",S_lnm1+S_q)
 
     ###############################
     # Expected number of detections

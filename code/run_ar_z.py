@@ -8,7 +8,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 import arviz as az
 import numpy as np
-np.random.seed(333)
+np.random.seed(138)
 from autoregressive_redshift_models import ar_mergerRate
 from getData import *
 
@@ -60,15 +60,13 @@ kernel = NUTS(ar_mergerRate,dense_mass=[("ar_z_std","logit_ar_z_tau")])
 mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
 
 # Choose a random key and run over our model
-rng_key = random.PRNGKey(444)
+rng_key = random.PRNGKey(139)
 rng_key,rng_key_ = random.split(rng_key)
 mcmc.run(rng_key_,sampleDict,injectionDict,full_z_data)
 mcmc.print_summary()
 
 # Save out data
 data = az.from_numpyro(mcmc)
-az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_z.cdf")
-np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_z_data.npy',full_z_data)
-#az.to_netcdf(data,"../data/ar_z_sfr.cdf")
-#np.save('../data/ar_z_data_sfr.npy',full_z_data)
+az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_z.cdf")
+np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_z_data.npy',full_z_data)
 

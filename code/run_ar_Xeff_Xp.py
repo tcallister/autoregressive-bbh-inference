@@ -94,8 +94,8 @@ mcmc.print_summary()
 
 # Save out data
 data = az.from_numpyro(mcmc)
-az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_Xeff_Xp.cdf")
-np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_Xeff_Xp_data.npy',full_Xeff_Xp_data)
+az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_Xeff_Xp.cdf")
+np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_Xeff_Xp_data.npy',full_Xeff_Xp_data)
 #az.to_netcdf(data,"../data/ar_Xeff_Xp.cdf")
 #np.save('../data/ar_Xeff_Xp_data.npy',full_Xeff_Xp_data)
 

@@ -30,9 +30,7 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     # First get variance of the process
     # We are imposing a steep power-law prior on this parameter
     ar_z_std = numpyro.sample("ar_z_std",dist.HalfNormal(1.))
-    #ar_z_std = numpyro.deterministic("ar_z_std",1.5)
-    #numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.177)**4)
-    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/1.75)**4)
+    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/2.)**4/8.75)
 
     # Finally the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
@@ -40,8 +38,7 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     ar_z_tau,jac_ar_z_tau = get_value_from_logit(logit_ar_z_tau,0.2,1.5)
     numpyro.factor("p_ar_z_tau",logit_ar_z_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_z_tau))
     numpyro.deterministic("ar_z_tau",ar_z_tau)
-    #ar_z_tau = numpyro.deterministic("ar_z_tau",0.15)
-    #numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))/2.**2)
+    numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))**2/2.)
 
     # Sample an initial rate density at reference point
     ln_f_z_ref_unscaled = numpyro.sample("ln_f_z_ref_unscaled",dist.Normal(0,1))
@@ -106,7 +103,7 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     mMax,jac_mMax = get_value_from_logit(logit_mMax,50.,100.)
     log_dmMin,jac_log_dmMin = get_value_from_logit(logit_log_dmMin,-1,1)
     log_dmMax,jac_log_dmMax = get_value_from_logit(logit_log_dmMax,0.5,1.5)
-    sig_cost,jac_sig_cost = get_value_from_logit(logit_sig_cost,0.5,1.5)
+    sig_cost,jac_sig_cost = get_value_from_logit(logit_sig_cost,0.3,2)
 
     numpyro.deterministic("sig_m1",sig_m1)
     numpyro.deterministic("log_f_peak",log_f_peak)

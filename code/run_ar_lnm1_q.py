@@ -1,5 +1,5 @@
 import numpyro
-nChains = 1
+nChains = 3
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC,init_to_value
 from jax import random
@@ -8,7 +8,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 import arviz as az
 import numpy as np
-np.random.seed(111)
+np.random.seed(1207)
 from autoregressive_mass_models import ar_lnm1_q
 from getData import *
 
@@ -78,25 +78,23 @@ full_lnm1_q_data = {'all_lnm1_samples':all_lnm1_samples[lnm1_sorting],
 
 # Set up NUTS sampler over our likelihood
 init_values = {
-            'ar_lnm1_std':1.8,
+            'ar_lnm1_std':1.,
             'log_ar_lnm1_tau':0.,
-            'ar_q_std':1.2,
+            'ar_q_std':1.,
             'log_ar_q_tau':0.,
             'mu_chi':0.1
             }
 kernel = NUTS(ar_lnm1_q,init_strategy=init_to_value(values=init_values),dense_mass=[("ar_lnm1_std","log_ar_lnm1_tau"),("ar_q_std","log_ar_q_tau")])
-mcmc = MCMC(kernel,num_warmup=500,num_samples=500,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
 
 # Choose a random key and run over our model
-rng_key = random.PRNGKey(201)
+rng_key = random.PRNGKey(1206)
 rng_key,rng_key_ = random.split(rng_key)
 mcmc.run(rng_key_,sampleDict,injectionDict,full_lnm1_q_data)
 mcmc.print_summary()
 
 # Save out data
 data = az.from_numpyro(mcmc)
-#az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q.cdf")
-#np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q_data.npy',full_lnm1_q_data)
-az.to_netcdf(data,"../data/ar_lnm1_q_entropy.cdf")
-np.save('../data/ar_lnm1_q_data_entropy.npy',full_lnm1_q_data)
+az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_lnm1_q.cdf")
+np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_lnm1_q_data.npy',full_lnm1_q_data)
 

@@ -1,6 +1,6 @@
 import numpyro
 import sys
-nChains = 1
+nChains = 3
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC,init_to_median,init_to_value
 from jax import random
@@ -9,7 +9,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 import arviz as az
 import numpy as np
-np.random.seed(119)
+np.random.seed(347)
 from autoregressive_spin_models import ar_spinMagTilt
 from getData import *
 
@@ -17,7 +17,7 @@ from getData import *
 
 # Get dictionaries holding injections and posterior samples
 injectionDict = getInjections(reweight=False)#sample_limit=10000,reweight=True,weighting_function=reweighting_function_archi)
-sampleDict = getSamples(sample_limit=3000,reweight=True,weighting_function=reweighting_function_archi)
+sampleDict = getSamples(sample_limit=2000,reweight=False)#,weighting_function=reweighting_function_archi)
 
 # Instantiate array to hold all combined primary mass samples
 total_Samples = 0
@@ -95,23 +95,19 @@ init_values = {
             'ar_chi_std':1.,
             'ar_cost_std':0.5,
             }
-#            'log_ar_chi_tau':0.,
-#            'log_ar_cost_tau':0.,
 kernel = NUTS(ar_spinMagTilt,\
                 dense_mass=[("ar_chi_std","logit_ar_chi_tau"),("ar_cost_std","logit_ar_cost_tau")],
-                init_strategy=init_to_value(values=init_values))
-mcmc = MCMC(kernel,num_warmup=400,num_samples=400,num_chains=nChains)
+                init_strategy=init_to_value(values=init_values),target_accept_prob=0.9)
+mcmc = MCMC(kernel,num_warmup=500,num_samples=1500,num_chains=nChains)
 
 # Choose a random key and run over our model
-rng_key = random.PRNGKey(2002)
+rng_key = random.PRNGKey(347)
 rng_key,rng_key_ = random.split(rng_key)
 mcmc.run(rng_key_,sampleDict,injectionDict,full_chi_data)
 mcmc.print_summary()
 
 # Save out data
 data = az.from_numpyro(mcmc)
-az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_chi_cost_400_400.cdf")
-np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/ar_chi_cost_data_400_400.npy',full_chi_data)
-#az.to_netcdf(data,"../data/ar_chi_cost.cdf")
-#np.save('../data/ar_chi_cost_data.npy',full_chi_data)
+az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_chi_cost.cdf")
+np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_chi_cost_data.npy',full_chi_data)
 

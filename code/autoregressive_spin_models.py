@@ -33,14 +33,14 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     # First get variance of the process
     # We are imposing a steep power-law prior on this parameter
     ar_chi_std = numpyro.sample("ar_chi_std",dist.HalfNormal(1.))
-    numpyro.factor("ar_chi_std_prior",ar_chi_std**2/2. - (ar_chi_std/1.177)**4)
+    numpyro.factor("ar_chi_std_prior",ar_chi_std**2/2. - (ar_chi_std/0.75)**4/8.75)
 
     # Finally the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
     #log_ar_chi_tau = numpyro.sample("log_ar_chi_tau",dist.Normal(0.,1))
     #ar_chi_tau = numpyro.deterministic("ar_chi_tau",10.**log_ar_chi_tau)
     logit_ar_chi_tau = numpyro.sample("logit_ar_chi_tau",dist.Normal(0,logit_std))
-    ar_chi_tau,jac_ar_chi_tau = get_value_from_logit(logit_ar_chi_tau,0.1,2.)
+    ar_chi_tau,jac_ar_chi_tau = get_value_from_logit(logit_ar_chi_tau,0.2,2.)
     numpyro.factor("p_ar_chi_tau",logit_ar_chi_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_chi_tau))
     numpyro.deterministic("ar_chi_tau",ar_chi_tau)
     numpyro.factor("chi_regularization",-(ar_chi_std/jnp.sqrt(ar_chi_tau))**2/(2.*0.4**2))
@@ -75,13 +75,13 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     # First sample the properties of our autoregressive process
     # First get variance of the process
     ar_cost_std = numpyro.sample("ar_cost_std",dist.HalfNormal(1.))
-    numpyro.factor("ar_cost_std_prior",ar_cost_std**2/2. - (ar_cost_std/1.177)**4)
+    numpyro.factor("ar_cost_std_prior",ar_cost_std**2/2. - (ar_cost_std/0.75)**4/8.75)
 
     # Finally the autocorrelation length
     #log_ar_cost_tau = numpyro.sample("log_ar_cost_tau",dist.Normal(0.,1.))
     #ar_cost_tau = numpyro.deterministic("ar_cost_tau",10.**log_ar_cost_tau)
     logit_ar_cost_tau = numpyro.sample("logit_ar_cost_tau",dist.Normal(0,logit_std))
-    ar_cost_tau,jac_ar_cost_tau = get_value_from_logit(logit_ar_cost_tau,0.2,4.)
+    ar_cost_tau,jac_ar_cost_tau = get_value_from_logit(logit_ar_cost_tau,0.3,4.)
     numpyro.factor("p_ar_cost_tau",logit_ar_cost_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_cost_tau))
     numpyro.deterministic("ar_cost_tau",ar_cost_tau)
     numpyro.factor("cost_regularization",-(ar_cost_std/jnp.sqrt(ar_cost_tau))**2/(2.*0.4**2))
@@ -256,7 +256,8 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data):
     # First get variance of the process
     # We are imposing a steep power-law prior on this parameter
     ar_Xeff_std = numpyro.sample("ar_Xeff_std",dist.HalfNormal(1.))
-    numpyro.factor("ar_Xeff_std_prior",ar_Xeff_std**2/2. - (ar_Xeff_std/1.177)**4)
+    #numpyro.factor("ar_Xeff_std_prior",ar_Xeff_std**2/2. - (ar_Xeff_std/1.177)**4)
+    numpyro.factor("ar_Xeff_std_prior",ar_Xeff_std**2/2. - (ar_Xeff_std/1.75)**4/8.75)
 
     # Finally the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
@@ -266,7 +267,7 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data):
     ar_Xeff_tau,jac_ar_Xeff_tau = get_value_from_logit(logit_ar_Xeff_tau,0.2,2.)
     numpyro.factor("p_ar_Xeff_tau",logit_ar_Xeff_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_Xeff_tau))
     numpyro.deterministic("ar_Xeff_tau",ar_Xeff_tau)
-    numpyro.factor("Xeff_regularization",-(ar_Xeff_std/jnp.sqrt(ar_Xeff_tau))**2/(2.*0.5**2))
+    numpyro.factor("Xeff_regularization",-(ar_Xeff_std/jnp.sqrt(ar_Xeff_tau))**2/(2.*0.4**2))
 
     # Sample an initial rate density at reference point
     ln_f_Xeff_ref_unscaled = numpyro.sample("ln_f_Xeff_ref_unscaled",dist.Normal(0,1))
@@ -296,7 +297,7 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data):
     # First get variance of the process
     # We are imposing a steep power-law prior on this parameter
     ar_Xp_std = numpyro.sample("ar_Xp_std",dist.HalfNormal(1.))
-    numpyro.factor("ar_Xp_std_prior",ar_Xp_std**2/2. - (ar_Xp_std/1.177)**4)
+    numpyro.factor("ar_Xp_std_prior",ar_Xp_std**2/2. - (ar_Xp_std/1.75)**4/8.75)
     #ar_Xp_std = numpyro.deterministic("ar_Xp_std",1.)
 
     # Finally the autocorrelation length
@@ -304,10 +305,10 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data):
     #log_ar_Xp_tau = numpyro.sample("log_ar_Xp_tau",dist.Normal(0.,1))
     #ar_Xp_tau = numpyro.deterministic("ar_Xp_tau",10.**log_ar_Xp_tau)
     logit_ar_Xp_tau = numpyro.sample("logit_ar_Xp_tau",dist.Normal(0,logit_std))
-    ar_Xp_tau,jac_ar_Xp_tau = get_value_from_logit(logit_ar_Xp_tau,0.1,2.)
+    ar_Xp_tau,jac_ar_Xp_tau = get_value_from_logit(logit_ar_Xp_tau,0.2,2.)
     numpyro.factor("p_ar_Xp_tau",logit_ar_Xp_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_Xp_tau))
     numpyro.deterministic("ar_Xp_tau",ar_Xp_tau)
-    numpyro.factor("Xp_regularization",-(ar_Xp_std/jnp.sqrt(ar_Xp_tau))**2/(2.*0.5**2))
+    numpyro.factor("Xp_regularization",-(ar_Xp_std/jnp.sqrt(ar_Xp_tau))**2/(2.*0.4**2))
     #ar_Xp_tau = numpyro.deterministic("ar_Xp_tau",0.3)
 
     # Sample an initial rate density at reference point
@@ -353,7 +354,7 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data):
     logR20 = numpyro.sample("logR20",dist.Uniform(-6,3))
     R20 = numpyro.deterministic("R20",10.**logR20)
 
-    alpha = numpyro.sample("alpha",dist.Normal(0,6))
+    alpha = numpyro.sample("alpha",dist.Normal(0,10))
     mu_m1 = numpyro.sample("mu_m1",dist.Uniform(20,50))
     mMin = numpyro.sample("mMin",dist.Uniform(5,15))
     bq = numpyro.sample("bq",dist.Normal(0,4))
@@ -365,7 +366,7 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data):
     logit_log_dmMin = numpyro.sample("logit_log_dmMin",dist.Normal(0,logit_std))
     logit_log_dmMax = numpyro.sample("logit_log_dmMax",dist.Normal(0,logit_std))
 
-    sig_m1,jac_sig_m1 = get_value_from_logit(logit_sig_m1,3.,15.)
+    sig_m1,jac_sig_m1 = get_value_from_logit(logit_sig_m1,2.,15.)
     log_f_peak,jac_log_f_peak = get_value_from_logit(logit_log_f_peak,-3,0.)
     mMax,jac_mMax = get_value_from_logit(logit_mMax,50.,100.)
     log_dmMin,jac_log_dmMin = get_value_from_logit(logit_log_dmMin,-1,1)
