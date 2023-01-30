@@ -85,6 +85,33 @@ def massModel(m1,alpha,mu_m1,sig_m1,f_peak,mMax,mMin,dmMax,dmMin):
 
 def get_value_from_logit(logit_x,x_min,x_max):
 
+    """
+    Function to map a variable `logit_x`, defined on `(-inf,+inf)`, to a quantity `x`
+    defined on the interval `(x_min,x_max)`. Here, the logit transform is given by
+
+    $
+    \begin{equation}
+    \mathrm{logit}x = \log\left( \frac{x - x_\mathrm{min}}{ x_\mathrm{max} - x} \right)
+    \end{equation}
+    $
+
+    Parameters
+    ----------
+    logit_x : float
+        Quantity to inverse-logit transform
+    x_min : float
+        Lower bound of `x`
+    x_max : float
+        Upper bound of `x`
+
+    Returns
+    -------
+    x : float
+       The inverse logit transform of `logit_x`
+    dlogit_dx : float
+       The Jacobian between `logit_x` and `x`; divide by this quantity to convert a uniform prior on `logit_x` to a uniform prior on `x`
+    """
+
     exp_logit = jnp.exp(logit_x)
     x = (exp_logit*x_max + x_min)/(1.+exp_logit)
     dlogit_dx = 1./(x-x_min) + 1./(x_max-x)
@@ -92,8 +119,26 @@ def get_value_from_logit(logit_x,x_min,x_max):
     return x,dlogit_dx
 
 def build_ar1(total,new_element):
-    phi,w = new_element
-    total = phi*total+w
+
+    """
+    Helper function to iteratively construct an AR process, given a previous value and a new parameter/innovation pair.
+    Used together with `jax.lax.scan`
+
+    Parameters
+    ----------
+    total : float
+        Processes' value at the previous iteration
+    new_element : tuple
+        Tuple `(c,w)` containing new parameter/innovation; see Eq. 4 of the associated paper
+
+    Returns
+    -------
+    total : float
+        AR process value at new point
+    """
+
+    c,w = new_element
+    total = c*total+w
     return total,total
 
 def calculate_gaussian_2D(chiEff, chiP, mu_eff, sigma2_eff, mu_p, sigma2_p, cov, chi_min=-1):
@@ -102,17 +147,27 @@ def calculate_gaussian_2D(chiEff, chiP, mu_eff, sigma2_eff, mu_p, sigma2_p, cov,
     Function to evaluate our bivariate gaussian probability distribution on chiEff and chiP
     See e.g. http://mathworld.wolfram.com/BivariateNormalDistribution.html
 
-    INPUTS
-    chiEff:     Array of chi-effective values at which to evaluate probability distribution
-    chiP:       Array of chi-p values
-    mu_eff:     Mean of the BBH chi-effective distribution
-    sigma2_eff: Variance of the BBH chi-effective distribution
-    mu_p:       Mean of the BBH chi-p distribution
-    sigma2_p:   Variance of the BBH chi-p distribution
-    cov:        Degree of covariance (off-diagonal elements of the covariance matrix are cov*sigma_eff*sigma_p)
+    Parameters
+    ----------
+    chiEff : float
+        Array of chi-effective values at which to evaluate probability distribution
+    chiP : float      
+        Array of chi-p values
+    mu_eff : float     
+        Mean of the BBH chi-effective distribution
+    sigma2_eff : float
+        Variance of the BBH chi-effective distribution
+    mu_p : float
+        Mean of the BBH chi-p distribution
+    sigma2_p : float
+        Variance of the BBH chi-p distribution
+    cov : float
+        Degree of covariance (off-diagonal elements of the covariance matrix are cov*sigma_eff*sigma_p)
 
-    RETURNS
-    y:          Array of probability densities
+    Returns
+    -------
+    y : `np.array`         
+        Array of probability densities
     """
 
     dchi_p = 0.01

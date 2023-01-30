@@ -200,6 +200,83 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     # Tally log-likelihoods across our catalog
     numpyro.factor("logp",jnp.sum(log_ps))
 
+def ar_mergerRate_priorOnly(sampleDict,injectionDict,full_z_data):
+
+    """
+    Implementation of a Gaussian effective spin distribution for inference within `numpyro`
+
+    Parameters
+    ----------
+    sampleDict : dict
+        Precomputed dictionary containing posterior samples for each event in our catalog
+    injectionDict : dict
+        Precomputed dictionary containing successfully recovered injections
+    """
+
+    all_z_samples = full_z_data['z_allSamples']
+    ind_z02 = full_z_data['ind_z02']
+    z_deltas = full_z_data['z_deltas']
+    z_deltas_low = z_deltas[:ind_z02][::-1]
+    z_deltas_high = z_deltas[ind_z02:]
+
+    ############################################################
+    # First sample the properties of our autoregressive process
+    # First get variance of the process
+    # We are imposing a steep power-law prior on this parameter
+    ar_z_std = numpyro.sample("ar_z_std",dist.HalfNormal(1.))
+    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/2.)**4/8.75)
+
+    # Finally the autocorrelation length
+    # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
+    logit_ar_z_tau = numpyro.sample("logit_ar_z_tau",dist.Normal(0,logit_std))
+    ar_z_tau,jac_ar_z_tau = get_value_from_logit(logit_ar_z_tau,0.2,1.5)
+    numpyro.factor("p_ar_z_tau",logit_ar_z_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_z_tau))
+    numpyro.deterministic("ar_z_tau",ar_z_tau)
+    numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))**2/2.)
+
+    # Sample an initial rate density at reference point
+    ln_f_z_ref_unscaled = numpyro.sample("ln_f_z_ref_unscaled",dist.Normal(0,1))
+    ln_f_z_ref = ln_f_z_ref_unscaled*ar_z_std
+
+    # Generate forward steps
+    z_steps_forward = numpyro.sample("z_steps_forward",dist.Normal(0,1),sample_shape=(z_deltas_high.size,))
+    z_phis_forward = jnp.exp(-z_deltas_high/ar_z_tau)
+    z_ws_forward = jnp.sqrt(1.-jnp.exp(-2.*z_deltas_high/ar_z_tau))*(ar_z_std*z_steps_forward)
+    final,ln_f_zs_high = lax.scan(build_ar1,ln_f_z_ref,jnp.transpose(jnp.array([z_phis_forward,z_ws_forward]))) 
+    ln_f_zs = jnp.append(ln_f_z_ref,ln_f_zs_high)
+
+    # Generate backward steps
+    z_steps_backward = numpyro.sample("z_steps_backward",dist.Normal(0,1),sample_shape=(z_deltas_low.size,))
+    z_phis_backward = jnp.exp(-z_deltas_low/ar_z_tau)
+    z_ws_backward = jnp.sqrt(1.-jnp.exp(-2.*z_deltas_low/ar_z_tau))*(ar_z_std*z_steps_backward)
+    final,ln_f_zs_low = lax.scan(build_ar1,ln_f_z_ref,jnp.transpose(jnp.array([z_phis_backward,z_ws_backward])))
+    ln_f_zs = jnp.append(ln_f_zs_low[::-1],ln_f_zs)
+
+    # Exponentiate and save
+    f_zs = jnp.exp(ln_f_zs)
+    f_zs_eventSorted = f_zs[full_z_data['z_reverseSorting']]
+    numpyro.deterministic("f_zs",f_zs)
+
+    ##############################
+    # Remaining degrees of freedom
+    ##############################
+    
+    # Sample our hyperparameters
+    # alpha: Power-law index on primary mass distribution
+    # mu_m1: Location of gaussian peak in primary mass distribution
+    # sig_m1: Width of gaussian peak
+    # f_peak: Fraction of events comprising gaussian peak
+    # mMax: Location at which BBH mass distribution tapers off
+    # mMin: Lower boundary at which BBH mass distribution tapers off
+    # dmMax: Taper width above maximum mass
+    # dmMin: Taper width below minimum mass
+    # bq: Power-law index on the conditional secondary mass distribution p(m2|m1)
+    # mu: Mean of the chi-effective distribution
+    # logsig_chi: Log10 of the chi-effective distribution's standard deviation
+
+    logR20 = numpyro.sample("logR20",dist.Normal(-0.34,0.43))
+    R20 = numpyro.deterministic("R20",10.**logR20)
+
 def ar_mergerRate_alternateKappa(sampleDict,injectionDict,full_z_data,kappa=2):
 
     """
