@@ -173,9 +173,12 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     p_a2_det = truncatedNormal(a2_det,mu_chi,10.**logsig_chi,0,1)
     p_cost1_det = truncatedNormal(cost1_det,mu_cost,sig_cost,-1,1)
     p_cost2_det = truncatedNormal(cost2_det,mu_cost,sig_cost,-1,1)
+
+    # All together, the quantity below is the detection rate dN/dm1*dm2*da1*da2*dcost1*dcost2*dz*dt_det
     R_pop_det = R20*f_m1_det*p_m2_det*f_z_det*p_a1_det*p_a2_det*p_cost1_det*p_cost2_det
 
     # Form ratio of proposed weights over draw weights
+    # The division by 2 corresponds to the fact that injections are uniformly placed over the 2 year observation period
     inj_weights = R_pop_det/(p_draw/2.)
     
     # As a fit diagnostic, compute effective number of injections
@@ -198,8 +201,7 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     def logp(m1_sample,m2_sample,a1_sample,a2_sample,cost1_sample,cost2_sample,z_sample,dVdz_sample,priors,z_ar_indices):
 
         # Compute proposed population weights, analogous to calculation for injections done above
-        # Use `ar_indices` to extract the correct values of `f_lnm1s_eventSorted` and `f_qs_eventSorted`
-        # correspond to each of this event's posterior samples
+        # Use `ar_indices` to extract the correct values of `f_zs_eventSorted` corresponding to each of this event's posterior samples
         f_m1 = massModel(m1_sample,alpha,mu_m1,sig_m1,10.**log_f_peak,mMax,mMin,10.**log_dmMax,10.**log_dmMin)/f_m1_norm
         f_z = dVdz_sample*f_zs_eventSorted[z_ar_indices]/(1.+z_sample)
         p_m2 = (1.+bq)*m2_sample**bq/(m1_sample**(1.+bq)-tmp_min**(1.+bq))

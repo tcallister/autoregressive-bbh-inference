@@ -214,7 +214,7 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
 
         # Compute proposed population weights, analogous to calculation for injections done above
         # Use `ar_indices` to extract the correct values of `f_lnm1s_eventSorted` and `f_qs_eventSorted`
-        # correspond to each of this event's posterior samples
+        # corresponding to each of this event's posterior samples
         f_m1 = f_lnm1s_eventSorted[ar_indices]/m1_sample
         f_m2 = f_qs_eventSorted[ar_indices]/m1_sample
         f_z = dVdz_sample*(1.+z_sample)**(kappa-1.)/f_z_norm
