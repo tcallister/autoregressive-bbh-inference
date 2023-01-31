@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>autoregressive_redshift_models module &mdash; autoregressive-bbh-inference  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> autoregressive-bbh-inference
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">autoregressive_redshift_models module</a><ul>
+<li><a class="reference internal" href="#autoregressive_redshift_models.ar_mergerRate"><code class="docutils literal notranslate"><span class="pre">ar_mergerRate()</span></code></a></li>
+<li><a class="reference internal" href="#autoregressive_redshift_models.ar_mergerRate_priorOnly"><code class="docutils literal notranslate"><span class="pre">ar_mergerRate_priorOnly()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">autoregressive-bbh-inference</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">autoregressive_redshift_models module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/source/autoregressive_redshift_models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-autoregressive_redshift_models">
+<span id="autoregressive-redshift-models-module"></span><h1>autoregressive_redshift_models module<a class="headerlink" href="#module-autoregressive_redshift_models" title="Permalink to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="autoregressive_redshift_models.ar_mergerRate">
+<span class="sig-prename descclassname"><span class="pre">autoregressive_redshift_models.</span></span><span class="sig-name descname"><span class="pre">ar_mergerRate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sampleDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">injectionDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_z_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/autoregressive_redshift_models.html#ar_mergerRate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoregressive_redshift_models.ar_mergerRate" title="Permalink to this definition"></a></dt>
+<dd><p>Likelihood model in which the BBH merger rate density vs. redshift is described as AR(1) processes, for use within <cite>numpyro</cite>.
+The distributions masses and spins are simultaneously fit.
+Primary masses are assumed to follow the mixture of a power law and gaussian peak, while mass ratios are distributed as a power law.
+Spin magnitudes are described via a truncated normal distribution, and spin cosine tilts are modeled as another
+truncated normal, whose mean is fixed to <cite>cos(theta)=1</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sampleDict</strong> (<em>dict</em>) – Precomputed dictionary containing posterior samples for each event in our catalog, as prepared by <cite>getData.getSamples</cite></p></li>
+<li><p><strong>injectionDict</strong> (<em>dict</em>) – Precomputed dictionary containing successfully recovered injections, as prepared by <cite>getData.getInjections</cite></p></li>
+<li><p><strong>full_z_data</strong> (<em>dict</em>) – Precomputed dictionary containing accumulated list of <em>all</em> <cite>z</cite> samples, among both event posteriors and injections.
+Dictionary also contains information needed to sort list into numerical order, or into event-based order.
+Prepared in <cite>run_ar_z.py</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="autoregressive_redshift_models.ar_mergerRate_priorOnly">
+<span class="sig-prename descclassname"><span class="pre">autoregressive_redshift_models.</span></span><span class="sig-name descname"><span class="pre">ar_mergerRate_priorOnly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sampleDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">injectionDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_z_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/autoregressive_redshift_models.html#ar_mergerRate_priorOnly"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoregressive_redshift_models.ar_mergerRate_priorOnly" title="Permalink to this definition"></a></dt>
+<dd><p>Implementation of a Gaussian effective spin distribution for inference within <cite>numpyro</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sampleDict</strong> (<em>dict</em>) – Precomputed dictionary containing posterior samples for each event in our catalog</p></li>
+<li><p><strong>injectionDict</strong> (<em>dict</em>) – Precomputed dictionary containing successfully recovered injections</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Tom Callister &amp; Will Farr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

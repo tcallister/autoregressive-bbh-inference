@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>getData &mdash; autoregressive-bbh-inference  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> autoregressive-bbh-inference
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">autoregressive-bbh-inference</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">getData</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for getData</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.cosmology</span> <span class="kn">import</span> <span class="n">Planck15</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">from</span> <span class="nn">utilities</span> <span class="kn">import</span> <span class="n">massModel</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="reweighting_function_arlnm1_q"><a class="viewcode-back" href="../source/getData.html#getData.reweighting_function_arlnm1_q">[docs]</a><span class="k">def</span> <span class="nf">reweighting_function_arlnm1_q</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span><span class="n">m2</span><span class="p">,</span><span class="n">a1</span><span class="p">,</span><span class="n">a2</span><span class="p">,</span><span class="n">cost1</span><span class="p">,</span><span class="n">cost2</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">dVdz</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function that computes weights under a fixed population similar to that preferred by</span>
+<span class="sd">    the ln(m1),q AR1 analysis. Preemptively reweighting posteriors and injections to this population</span>
+<span class="sd">    can help increase sampling efficiency when subsequently inferring the actual population distribution of BBHs</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m1 : `np.array`</span>
+<span class="sd">        Primary BBH masses (units of Msun)</span>
+<span class="sd">    m2 : `np.array`</span>
+<span class="sd">        Secondary BBH masses (units of Msun)</span>
+<span class="sd">    a1 : `np.array`</span>
+<span class="sd">        Primary spin magnitudes</span>
+<span class="sd">    a2 : `np.array`</span>
+<span class="sd">        Secondary spin magnitudes</span>
+<span class="sd">    cost1 : `np.array`</span>
+<span class="sd">        Cosines of primary spin-orbit tilts</span>
+<span class="sd">    cost2 : `np.array`</span>
+<span class="sd">        Cosines of secondary spin-orbit tilts</span>
+<span class="sd">    z : `np.array`</span>
+<span class="sd">        Redshifts</span>
+<span class="sd">    dVdz : `np.array`</span>
+<span class="sd">        Differential comoving volumes correspond to each redshift in `z`</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dP_dm1m2a1a2cost1cost2z : `np.array`</span>
+<span class="sd">        Probability density evaluated at each `(m1,m2,a1,a2,cost1,cost2,z)` under the target population</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Hyperparameters characterizing target distribution</span>
+    <span class="n">kappa</span> <span class="o">=</span> <span class="mf">3.</span>
+    <span class="n">q_std</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.5</span>
+    <span class="n">m0</span> <span class="o">=</span> <span class="mf">10.</span>
+    <span class="n">f_pl</span> <span class="o">=</span> <span class="mf">0.3</span>
+    <span class="n">f_peak_in_peak1</span> <span class="o">=</span> <span class="mf">0.9</span>
+
+    <span class="c1"># Construct primary mass distribution</span>
+    <span class="n">p_m1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span>
+    <span class="n">p_m1</span> <span class="o">+=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">f_pl</span><span class="p">)</span><span class="o">*</span><span class="n">f_peak_in_peak1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">m1</span><span class="o">-</span><span class="mf">10.</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="mf">0.8</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">0.8</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">p_m1</span> <span class="o">+=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">f_pl</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">f_peak_in_peak1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">m1</span><span class="o">-</span><span class="mf">35.</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="mf">2.</span><span class="o">**</span><span class="mf">2.</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">2.</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">p_m1_pl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">m1</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="n">p_m1_pl</span><span class="p">[</span><span class="n">m1</span><span class="o">&lt;</span><span class="n">m0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">p_m1_pl</span><span class="p">[</span><span class="n">m1</span><span class="o">&gt;=</span><span class="n">m0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">m1</span><span class="p">[</span><span class="n">m1</span><span class="o">&gt;=</span><span class="n">m0</span><span class="p">]</span><span class="o">/</span><span class="n">m0</span><span class="p">)</span><span class="o">**</span><span class="n">alpha</span>
+    <span class="n">p_m1_pl</span> <span class="o">/=</span> <span class="p">(</span><span class="n">alpha</span><span class="o">*</span><span class="n">m0</span> <span class="o">-</span> <span class="mf">2.</span> <span class="o">-</span> <span class="n">alpha</span><span class="o">*</span><span class="mf">2.</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="n">alpha</span><span class="p">)</span>
+    <span class="n">p_m1</span> <span class="o">+=</span> <span class="n">f_pl</span><span class="o">*</span><span class="n">p_m1_pl</span> 
+    <span class="n">p_m1</span><span class="p">[</span><span class="n">m1</span><span class="o">&lt;</span><span class="mf">2.</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">p_m1</span><span class="p">[</span><span class="n">m1</span><span class="o">&gt;</span><span class="mf">100.</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+    <span class="c1"># Compute mass ratio distribution and convert to a density over m2</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">m2</span><span class="o">/</span><span class="n">m1</span>
+    <span class="n">p_q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">q</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">q_std</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">*</span><span class="mf">2.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">q_std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">p_m2</span> <span class="o">=</span> <span class="n">p_q</span><span class="o">/</span><span class="n">m1</span>
+
+    <span class="c1"># Redshift distribution</span>
+    <span class="n">p_z</span> <span class="o">=</span> <span class="n">dVdz</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">kappa</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span>
+    <span class="n">z_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">2.3</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="n">dVdz_grid</span> <span class="o">=</span> <span class="mf">4.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">Planck15</span><span class="o">.</span><span class="n">differential_comoving_volume</span><span class="p">(</span><span class="n">z_grid</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">Gpc</span><span class="o">**</span><span class="mi">3</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">sr</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">dVdz_grid</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="n">z_grid</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">kappa</span><span class="o">-</span><span class="mf">1.</span><span class="p">))</span>
+    <span class="n">p_z</span> <span class="o">/=</span> <span class="n">norm</span>
+
+    <span class="c1"># Isotropic component spins</span>
+    <span class="n">p_a1</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">p_a2</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">p_cost1</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="mf">2.</span>
+    <span class="n">p_cost2</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="mf">2.</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">p_m1</span><span class="o">*</span><span class="n">p_m2</span><span class="o">*</span><span class="n">p_a1</span><span class="o">*</span><span class="n">p_a2</span><span class="o">*</span><span class="n">p_cost1</span><span class="o">*</span><span class="n">p_cost2</span><span class="o">*</span><span class="n">p_z</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="getInjections"><a class="viewcode-back" href="../source/getData.html#getData.getInjections">[docs]</a><span class="k">def</span> <span class="nf">getInjections</span><span class="p">(</span><span class="n">sample_limit</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span><span class="n">reweight</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">weighting_function</span><span class="o">=</span><span class="n">reweighting_function_arlnm1_q</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to load and preprocess found injections for use in numpyro likelihood functions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample_limit : int</span>
+<span class="sd">        If reweighting to a different reference population, number of found injections to use. No effect otherwise. Default 1e4</span>
+<span class="sd">    reweight : bool</span>
+<span class="sd">        If `True`, reweight injections to the reference population defined in `weighting_function`. Default `False`</span>
+<span class="sd">    weighting_function : func</span>
+<span class="sd">        Function defining new reference population to reweight to. No effect if `reweight=True`. Default `reweighting_function_arlnm1_q`</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ------- </span>
+<span class="sd">    injectionDict : dict</span>
+<span class="sd">        Dictionary containing found injections and associated draw probabilities, for downstream use in hierarchical inference</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Load injections</span>
+    <span class="n">injectionFile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span><span class="s2">&quot;injectionDict_FAR_1_in_1.pickle&quot;</span><span class="p">)</span>
+    <span class="n">injectionDict</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">injectionFile</span><span class="p">,</span><span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Convert all lists to numpy arrays</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">injectionDict</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span><span class="o">!=</span><span class="s1">&#39;nTrials&#39;</span><span class="p">:</span>
+            <span class="n">injectionDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">injectionDict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+    <span class="c1"># If reweighting injections to a new reference population...</span>
+    <span class="k">if</span> <span class="n">reweight</span><span class="p">:</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;REWEIGHTING&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Extract injection parametetrs and old draw weights</span>
+        <span class="n">m1</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;m1&#39;</span><span class="p">]</span>
+        <span class="n">m2</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;m2&#39;</span><span class="p">]</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span>
+        <span class="n">dVdz</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;dVdz&#39;</span><span class="p">]</span>
+        <span class="n">a1</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span>
+        <span class="n">a2</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span>
+        <span class="n">cost1</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;cost1&#39;</span><span class="p">]</span>
+        <span class="n">cost2</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;cost2&#39;</span><span class="p">]</span>
+        <span class="n">pDraw</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;p_draw_m1m2z&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;p_draw_a1a2cost1cost2&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Define updated probabilities under new reference population</span>
+        <span class="n">p_new</span> <span class="o">=</span> <span class="n">weighting_function</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span><span class="n">m2</span><span class="p">,</span><span class="n">a1</span><span class="p">,</span><span class="n">a2</span><span class="p">,</span><span class="n">cost1</span><span class="p">,</span><span class="n">cost2</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">dVdz</span><span class="p">)</span>
+
+        <span class="c1"># The ratio between new andn old draw weights will be used to resample found injections</span>
+        <span class="n">downselection_draw_weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">p_new</span><span class="o">/</span><span class="n">pDraw</span><span class="p">)</span><span class="o">/</span><span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;nTrials&#39;</span><span class="p">]</span>
+        <span class="n">nEff_downselection</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">downselection_draw_weights</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">downselection_draw_weights</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># Save new draw weights, which will take the place of `pDraw` above</span>
+        <span class="c1"># For convenience, put the weights entirely in `p_draw_m1m2z`, leaving `p_draw_a1a2cost1cost2` to be identically one</span>
+        <span class="n">new_pDraw</span> <span class="o">=</span> <span class="p">(</span><span class="n">p_new</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">downselection_draw_weights</span><span class="p">)</span>
+        <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;downselection_Neff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nEff_downselection</span>
+        <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;nTrials&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_limit</span>
+        <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;p_draw_m1m2z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_pDraw</span>
+        <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;p_draw_a1a2cost1cost2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">new_pDraw</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        
+        <span class="c1"># Randomly resample injections</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">nEff_downselection</span><span class="p">)</span>
+        <span class="n">inds_to_keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">new_pDraw</span><span class="o">.</span><span class="n">size</span><span class="p">),</span><span class="n">size</span><span class="o">=</span><span class="n">sample_limit</span><span class="p">,</span><span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">downselection_draw_weights</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">downselection_draw_weights</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">injectionDict</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">!=</span><span class="s1">&#39;nTrials&#39;</span> <span class="ow">and</span> <span class="n">key</span><span class="o">!=</span><span class="s1">&#39;downselection_Neff&#39;</span><span class="p">:</span>
+                <span class="n">injectionDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">inds_to_keep</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">injectionDict</span></div>
+
+<div class="viewcode-block" id="getSamples"><a class="viewcode-back" href="../source/getData.html#getData.getSamples">[docs]</a><span class="k">def</span> <span class="nf">getSamples</span><span class="p">(</span><span class="n">sample_limit</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span><span class="n">bbh_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">reweight</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">weighting_function</span><span class="o">=</span><span class="n">reweighting_function_arlnm1_q</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to load and preprocess BBH posterior samples for use in numpyro likelihood functions.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample_limit : int</span>
+<span class="sd">        Number of posterior samples to retain for each event, for use in population inference (default 2000)</span>
+<span class="sd">    bbh_only : bool</span>
+<span class="sd">        If True, will exclude samples for BNS, NSBH, and mass-gap events (default True)</span>
+<span class="sd">    reweight : bool</span>
+<span class="sd">        If True, reweight posteriors to the reference population defined in `weighting_function`. Default `False`</span>
+<span class="sd">    weighting_function : func</span>
+<span class="sd">        Function defining new reference population to reweight to. No effect if `reweight=True`. Default `reweighting_function_arlnm1_q`</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sampleDict : dict</span>
+<span class="sd">        Dictionary containing posterior samples, for downstream use in hierarchical inference</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Load dictionary with preprocessed posterior samples</span>
+    <span class="n">sampleFile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span><span class="s2">&quot;sampleDict_FAR_1_in_1_yr.pickle&quot;</span><span class="p">)</span>
+    <span class="n">sampleDict</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">sampleFile</span><span class="p">,</span><span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Remove non-BBH events, if desired</span>
+    <span class="n">non_bbh</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;GW170817&#39;</span><span class="p">,</span><span class="s1">&#39;S190425z&#39;</span><span class="p">,</span><span class="s1">&#39;S190426c&#39;</span><span class="p">,</span><span class="s1">&#39;S190814bv&#39;</span><span class="p">,</span><span class="s1">&#39;S190917u&#39;</span><span class="p">,</span><span class="s1">&#39;S200105ae&#39;</span><span class="p">,</span><span class="s1">&#39;S200115j&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">bbh_only</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">non_bbh</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Removing &quot;</span><span class="p">,</span><span class="n">event</span><span class="p">)</span>
+            <span class="n">sampleDict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+    <span class="c1"># Loop across events</span>
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">:</span>
+
+        <span class="c1"># If we are preemptively reweighting to a new reference prior...</span>
+        <span class="k">if</span> <span class="n">reweight</span><span class="p">:</span>
+
+            <span class="c1"># Extract samples</span>
+            <span class="n">m1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;m1&#39;</span><span class="p">])</span>
+            <span class="n">m2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;m2&#39;</span><span class="p">])</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;z&#39;</span><span class="p">])</span>
+            <span class="n">dVdz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;dVc_dz&#39;</span><span class="p">])</span>
+            <span class="n">a1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;a1&#39;</span><span class="p">])</span>
+            <span class="n">a2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;a2&#39;</span><span class="p">])</span>
+            <span class="n">cost1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;cost1&#39;</span><span class="p">])</span>
+            <span class="n">cost2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;cost2&#39;</span><span class="p">])</span>
+            <span class="n">prior</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;z_prior&#39;</span><span class="p">])</span>
+
+            <span class="c1"># Define new population prior, and for convenience put it into the pre-existing `z_prior` field</span>
+            <span class="n">p_new</span> <span class="o">=</span> <span class="n">weighting_function</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span><span class="n">m2</span><span class="p">,</span><span class="n">a1</span><span class="p">,</span><span class="n">a2</span><span class="p">,</span><span class="n">cost1</span><span class="p">,</span><span class="n">cost2</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">dVdz</span><span class="p">)</span>
+            <span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;z_prior&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_new</span>
+
+            <span class="c1"># Define weights for random downselection below</span>
+            <span class="n">draw_weights</span> <span class="o">=</span> <span class="n">p_new</span><span class="o">/</span><span class="n">prior</span>
+            <span class="n">draw_weights</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">draw_weights</span><span class="p">)</span>
+            <span class="n">neff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">draw_weights</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">draw_weights</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">neff</span><span class="o">&lt;</span><span class="mf">2.</span><span class="o">*</span><span class="n">sample_limit</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">event</span><span class="p">,</span><span class="n">neff</span><span class="p">)</span>
+
+        <span class="c1"># If not reweighting...</span>
+        <span class="k">else</span><span class="p">:</span>
+            
+            <span class="c1"># Uniform draw weights</span>
+            <span class="n">draw_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;m1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">/</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;m1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+
+        <span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;downselection_Neff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">draw_weights</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">draw_weights</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># Randomly downselect to the desired number of samples       </span>
+        <span class="n">inds_to_keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="s1">&#39;m1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">),</span><span class="n">size</span><span class="o">=</span><span class="n">sample_limit</span><span class="p">,</span><span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">draw_weights</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">!=</span><span class="s1">&#39;downselection_Neff&#39;</span><span class="p">:</span>
+                <span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sampleDict</span><span class="p">[</span><span class="n">event</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="n">inds_to_keep</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">sampleDict</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Tom Callister &amp; Will Farr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
