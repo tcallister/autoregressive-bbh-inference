@@ -117,15 +117,22 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     # Remaining degrees of freedom
     ##############################
 
+    # Sample our hyperparameters
+    # R20: Differential merger rate (dR/dlnm1) at reference m1 and z values
+    # mu_chi: Mean of spin magnitude distribution; see Eq. C4
+    # logsig_chi: Log10 spin magnitude standard deviation; see Eq. C4
+    # sig_cost: Standard deviation of cosine spin tilts; see Eq. C5
+    # kappa: Power-law index on redshift evolution of the merger rate; see Eq. C6
+
     # Sample the merger rate at our reference mass and redshift values
     logR20 = numpyro.sample("logR20",dist.Uniform(-6,3))
     R20 = numpyro.deterministic("R20",10.**logR20)
 
-    # Sample our baseline hyperparameters for mass ratio, redshift, and component spins
+    # Sample our baseline hyperparameters for redshift and component spins
     # Draw some parameters directly
-    mu_chi = numpyro.sample("mu_chi",dist.Uniform(0.,1.))           # Mean of spin magnitude distribution; see Eq. C4
-    logsig_chi = numpyro.sample("logsig_chi",dist.Uniform(-1.,0.))  # Log standard deviation of spin magnitudes; Eq. C4
-    kappa = numpyro.sample("kappa",dist.Normal(0,5))                # Power-law index on redshift distribution; Eq. C6
+    mu_chi = numpyro.sample("mu_chi",dist.Uniform(0.,1.))  
+    logsig_chi = numpyro.sample("logsig_chi",dist.Uniform(-1.,0.))  
+    kappa = numpyro.sample("kappa",dist.Normal(0,5))
 
     # Some parameters have posteriors that encounter their prior boundaries.
     # In this case it is easier to sample in logit space over the (-inf,inf) interval,
@@ -133,7 +140,7 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
 
     # First draw a logit quantity from a normal distribution, then override this normal
     # prior to impose a uniform prior on the physical parameter of interest
-    logit_sig_cost = numpyro.sample("logit_sig_cost",dist.Normal(0,logit_std))  # Standard deviation of cosine spin tilts; Eq. C5
+    logit_sig_cost = numpyro.sample("logit_sig_cost",dist.Normal(0,logit_std))  
     sig_cost,jac_sig_cost = get_value_from_logit(logit_sig_cost,0.3,2.)
     numpyro.deterministic("sig_cost",sig_cost)
     numpyro.factor("p_sig_cost",logit_sig_cost**2/(2.*logit_std**2)-jnp.log(jac_sig_cost))
@@ -169,6 +176,8 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     # Compute proposed population weights
     # Note that injection draw weights are defined as dP/dm1*dm2, rather than dP/dlnm1*dq (as we are using here)
     # This requires an additional factor of 1/m1 on both f_m1_det and f_m2_det below
+    # Additionally, draw weights are defined as probability densities over redshift and detector frame time,
+    # necessitating us to multiply by dVdz*(1.+z)**(-1) to convert from a source-frame rate density
     f_m1_det = f_lnm1s_eventSorted[full_lnm1_q_data['injections_from_allSamples']]/m1_det
     f_m2_det = f_qs_eventSorted[full_lnm1_q_data['injections_from_allSamples']]/m1_det
     f_z_det = dVdz_det*(1.+z_det)**(kappa-1.)/f_z_norm
@@ -177,7 +186,7 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     p_cost1_det = truncatedNormal(cost1_det,mu_cost,sig_cost,-1,1)
     p_cost2_det = truncatedNormal(cost2_det,mu_cost,sig_cost,-1,1)
 
-    # All together, the quantity below is dR/dm1*dm2*da1*da2*dcost1*dcost2 as a function of redshift
+    # All together, the quantity below is the detection rate dN/dm1*dm2*da1*da2*dcost1*dcost2*dz*dt_det
     R_pop_det = R20*f_m1_det*f_m2_det*f_z_det*p_a1_det*p_a2_det*p_cost1_det*p_cost2_det
 
     # Form ratio of proposed weights over draw weights
@@ -214,7 +223,7 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
         p_cost1 = truncatedNormal(cost1_sample,mu_cost,sig_cost,-1,1)
         p_cost2 = truncatedNormal(cost2_sample,mu_cost,sig_cost,-1,1)
 
-        # The result is dR/dm1*dm2*da1*da2*dcost1*dcost2 as a function of redshift
+        # All together, the quantity below is the detection rate dN/dm1*dm2*da1*da2*dcost1*dcost2*dz*dt_det
         R_pop = R20*f_m1*f_m2*f_z*p_a1*p_a2*p_cost1*p_cost2
 
         # Form ratio of proposed population weights to PE priors
@@ -276,7 +285,7 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     q_deltas = full_lnm_q_data['q_deltas'][::-1]
 
     ###################################
-    # Constructing our lnm1 AR1 process
+    # Constructing our lnm AR1 process
     ###################################
 
     # First get variance of the process
@@ -353,14 +362,21 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     # Sample our baseline hyperparameters for mass ratio, redshift, and component spins
     ####################################################################################
 
+    # Sample our hyperparameters
+    # R20: Differential merger rate (dR/dlnm1) at reference m1 and z values
+    # mu_chi: Mean of spin magnitude distribution; see Eq. C4
+    # logsig_chi: Log10 spin magnitude standard deviation; see Eq. C4
+    # sig_cost: Standard deviation of cosine spin tilts; see Eq. C5
+    # kappa: Power-law index on redshift evolution of the merger rate; see Eq. C6
+
     # Sample the merger rate at our reference mass and redshift values
     logR20 = numpyro.sample("logR20",dist.Uniform(-6,3))
     R20 = numpyro.deterministic("R20",10.**logR20)
 
-    # Sample our baseline hyperparameters for mass ratio, redshift, and component spins
-    mu_chi = numpyro.sample("mu_chi",dist.Uniform(0.,1.))           # Mean of spin magnitudes; see Eq. C4
-    kappa = numpyro.sample("kappa",dist.Normal(0,5))                # Power-law index on redshift distribution; Eq. C6
-    logsig_chi = numpyro.sample("logsig_chi",dist.Uniform(-1.,0.))  # Log standard deviation of spin magnitudes; Eq. C4
+    # Sample our baseline hyperparameters for redshift and component spins
+    mu_chi = numpyro.sample("mu_chi",dist.Uniform(0.,1.))  
+    kappa = numpyro.sample("kappa",dist.Normal(0,5))  
+    logsig_chi = numpyro.sample("logsig_chi",dist.Uniform(-1.,0.)) 
 
     # Some parameters have posteriors that encounter their prior boundaries.
     # In this case it is easier to sample in logit space over the (-inf,inf) interval,
@@ -403,7 +419,7 @@ def ar_lnm_q(sampleDict,injectionDict,full_lnm_q_data):
     p_cost1_det = truncatedNormal(cost1_det,mu_cost,sig_cost,-1,1)
     p_cost2_det = truncatedNormal(cost2_det,mu_cost,sig_cost,-1,1)
 
-    # Together, this is dR/dm1*dm2*da1*da2*dcost1*dcost2 as a function of redshift
+    # All together, the quantity below is the detection rate dN/dm1*dm2*da1*da2*dcost1*dcost2*dz*dt_det
     R_pop_det = R20*f_m1_det*f_m2_det*f_q_det*f_z_det*p_a1_det*p_a2_det*p_cost1_det*p_cost2_det
 
     # Form ratio of proposed weights over draw weights
