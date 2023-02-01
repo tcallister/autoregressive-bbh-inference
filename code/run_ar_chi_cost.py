@@ -16,7 +16,7 @@ from getData import *
 # Run over several chains to check convergence
 
 # Get dictionaries holding injections and posterior samples
-injectionDict = getInjections(reweight=False
+injectionDict = getInjections(reweight=False)
 sampleDict = getSamples(sample_limit=2000,reweight=False)
 
 # Instantiate array to hold all combined primary mass samples
