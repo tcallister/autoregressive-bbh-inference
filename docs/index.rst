@@ -17,7 +17,15 @@ Using the GWTC-3 catalog of LIGO/Virgo compact binary detections, we see the fol
 **Binary black hole masses**
 
 .. image:: images/figure_03a.pdf
-    :width: 500
+    :height: 300
+
+The BBH mass spectrum exhibits two maxima near 10 and 35 solar masses, with a continuum that likely steepens above 40 solar masses.
+The result is well-described by a superposition between a broken power law and two Gaussian peaks.
+
+**The black hole merger rate as a function of redshift**
+
+.. image:: images/figure_06_cropped.pdf
+    :height: 300
 
 
 Contents:
