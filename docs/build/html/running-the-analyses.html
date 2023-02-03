@@ -43,6 +43,9 @@
 <li class="toctree-l1"><a class="reference internal" href="making-figures.html">Figure generation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Running the analyses</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#autoregressive-mass-and-mass-ratio-inference">Autoregressive mass and mass ratio inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#redshift-evolution-of-the-merger-rate">Redshift evolution of the merger rate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#component-spin-magnitudes-and-tilts">Component spin magnitudes and tilts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#effective-inspiral-and-precessing-spins">Effective inspiral and precessing spins</a></li>
 </ul>
 </li>
 </ul>
@@ -112,6 +115,126 @@ $<span class="w"> </span>python<span class="w"> </span>process_lnm1_q.py
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>A notebook that demonstrates how to load in, inspect, and manipulate this output file can be found <a class="reference external" href="https://github.com/tcallister/autoregressive-bbh-inference/blob/main/data/inspect_ar_lnm1_q_results.ipynb">here</a></p>
+</div>
+</section>
+<section id="redshift-evolution-of-the-merger-rate">
+<h2>Redshift evolution of the merger rate<a class="headerlink" href="#redshift-evolution-of-the-merger-rate" title="Permalink to this heading"></a></h2>
+<p>To rerun our autoregressive inference on the BBH merger rate evolution with redshift, do the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>conda<span class="w"> </span>activate<span class="w"> </span>gwtc3-spin-studes
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>code/
+$<span class="w"> </span>python<span class="w"> </span>run_ar_z.py
+</pre></div>
+</div>
+<p>This script will launch <cite>numpyro</cite>, using the likelihood model <a class="reference internal" href="autoregressive_redshift_models.html#autoregressive_redshift_models.ar_mergerRate" title="autoregressive_redshift_models.ar_mergerRate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">autoregressive_redshift_models.ar_mergerRate()</span></code></a>.
+This may take several hours to complete.
+The output will be two files:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>final-ar_z.cdf
+final-ar_z_data.npy
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Before running, open <cite>run_ar_z.py</cite> and change the output filepaths to suitable locations!
+These output files will, by default, be written to a directory that likely does not exist on your system.</p>
+<p>Also, be aware that <cite>file-ar_z.cdf</cite> is <em>large</em>, running at about 15 GB.</p>
+</div>
+<p>The file <code class="code docutils literal notranslate"><span class="pre">final-ar_z_data.npy</span></code> contains arrays holding all the redshifts in our dataset (including posterior samples and injections);
+these are the values over which our AR process is defined.
+This file also contains information used to sort or reverse sort these values, used inside the likelihood function.
+The file <code class="code docutils literal notranslate"><span class="pre">final-ar_z.cdf</span></code>, in turn, contains the full inference output, including posterior samples and inference diagnostics.</p>
+<p>Finally, we distill the full inference output into the restricted set of data that will be used for downstream analyses and figure generation.
+This is done via</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>../data/
+$<span class="w"> </span>python<span class="w"> </span>process_z.py
+</pre></div>
+</div>
+<p>This script will load the two files above and create a single (much smaller!) output file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ar_z_summary.hdf
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A notebook that demonstrates how to load in, inspect, and manipulate this output file can be found <a class="reference external" href="https://github.com/tcallister/autoregressive-bbh-inference/blob/main/data/inspect_ar_z_results.ipynb">here</a></p>
+</div>
+</section>
+<section id="component-spin-magnitudes-and-tilts">
+<h2>Component spin magnitudes and tilts<a class="headerlink" href="#component-spin-magnitudes-and-tilts" title="Permalink to this heading"></a></h2>
+<p>To rerun our autoregressive inference on the BBH component spin distribution, do the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>conda<span class="w"> </span>activate<span class="w"> </span>gwtc3-spin-studes
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>code/
+$<span class="w"> </span>python<span class="w"> </span>run_ar_chi_cost.py
+</pre></div>
+</div>
+<p>This script will launch <cite>numpyro</cite>, using the likelihood model <a class="reference internal" href="autoregressive_spin_models.html#autoregressive_spin_models.ar_spinMagTilt" title="autoregressive_spin_models.ar_spinMagTilt"><code class="xref py py-meth docutils literal notranslate"><span class="pre">autoregressive_spin_models.ar_spinMagTilt()</span></code></a>.
+This may take several hours to complete.
+The output will be two files:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>final-ar_chi_cost.cdf
+final-ar_chi_cost_data.npy
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Before running, open <cite>run_ar_chi_cost.py</cite> and change the output filepaths to suitable locations!
+These output files will, by default, be written to a directory that likely does not exist on your system.</p>
+<p>Also, be aware that <cite>file-ar_chi_cost.cdf</cite> is <em>large</em>, running a little over 40 GB.</p>
+</div>
+<p>The file <code class="code docutils literal notranslate"><span class="pre">final-ar_chi_cost_data.npy</span></code> contains arrays holding all the spin magnitudes and cosine tilts in our dataset (including posterior samples and injections);
+these are the values over which our AR processes are defined.
+This file also contains information used to sort or reverse sort these values, used inside the likelihood function.
+The file <code class="code docutils literal notranslate"><span class="pre">final-ar_chi_cost.cdf</span></code>, in turn, contains the full inference output, including posterior samples and inference diagnostics.</p>
+<p>Finally, we distill the full inference output into the restricted set of data that will be used for downstream analyses and figure generation.
+This is done via</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>../data/
+$<span class="w"> </span>python<span class="w"> </span>process_chi_cost.py
+</pre></div>
+</div>
+<p>This script will load the two files above and create a single (much smaller!) output file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ar_chi_cost_summary.hdf
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A notebook that demonstrates how to load in, inspect, and manipulate this output file can be found <a class="reference external" href="https://github.com/tcallister/autoregressive-bbh-inference/blob/main/data/inspect_ar_chi_cost_results.ipynb">here</a></p>
+</div>
+</section>
+<section id="effective-inspiral-and-precessing-spins">
+<h2>Effective inspiral and precessing spins<a class="headerlink" href="#effective-inspiral-and-precessing-spins" title="Permalink to this heading"></a></h2>
+<p>To rerun our autoregressive inference on the BBH effective spin distribution, do the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>conda<span class="w"> </span>activate<span class="w"> </span>gwtc3-spin-studes
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>code/
+$<span class="w"> </span>python<span class="w"> </span>run_ar_Xeff_Xp.py
+</pre></div>
+</div>
+<p>This script will launch <cite>numpyro</cite>, using the likelihood model <a class="reference internal" href="autoregressive_spin_models.html#autoregressive_spin_models.ar_spinMagTilt" title="autoregressive_spin_models.ar_spinMagTilt"><code class="xref py py-meth docutils literal notranslate"><span class="pre">autoregressive_spin_models.ar_spinMagTilt()</span></code></a>.
+This may take several hours to complete.
+The output will be two files:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>final-ar_Xeff_Xp.cdf
+final-ar_Xeff_Xp_data.npy
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Before running, open <cite>run_ar_Xeff_Xp.py</cite> and change the output filepaths to suitable locations!
+These output files will, by default, be written to a directory that likely does not exist on your system.</p>
+<p>Also, be aware that <cite>file-ar_Xeff_Xp.cdf</cite> is <em>large</em>, running a little over 25 GB.</p>
+</div>
+<p>The file <code class="code docutils literal notranslate"><span class="pre">final-ar_Xeff_Xp_data.npy</span></code> contains arrays holding all the effective inspiral and precessing spins in our dataset (including posterior samples and injections);
+these are the values over which our AR processes are defined.
+This file also contains information used to sort or reverse sort these values, used inside the likelihood function.
+The file <code class="code docutils literal notranslate"><span class="pre">final-ar_Xeff_Xp.cdf</span></code>, in turn, contains the full inference output, including posterior samples and inference diagnostics.</p>
+<p>Finally, we distill the full inference output into the restricted set of data that will be used for downstream analyses and figure generation.
+This is done via</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>../data/
+$<span class="w"> </span>python<span class="w"> </span>process_Xeff_Xp.py
+</pre></div>
+</div>
+<p>This script will load the two files above and create a single (much smaller!) output file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ar_Xeff_Xp_summary.hdf
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A notebook that demonstrates how to load in, inspect, and manipulate this output file can be found <a class="reference external" href="https://github.com/tcallister/autoregressive-bbh-inference/blob/main/data/inspect_ar_Xeff_Xp_results.ipynb">here</a></p>
 </div>
 </section>
 </section>
