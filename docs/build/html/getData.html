@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>getData module &mdash; autoregressive-bbh-inference  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> autoregressive-bbh-inference
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="making-figures.html">Figure generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running-the-analyses.html">Running the analyses</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">autoregressive-bbh-inference</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">getData module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/getData.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-getData">
+<span id="getdata-module"></span><h1>getData module<a class="headerlink" href="#module-getData" title="Permalink to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="getData.getInjections">
+<span class="sig-prename descclassname"><span class="pre">getData.</span></span><span class="sig-name descname"><span class="pre">getInjections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_limit=10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reweight=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting_function=&lt;function</span> <span class="pre">reweighting_function_arlnm1_q&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/getData.html#getInjections"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#getData.getInjections" title="Permalink to this definition"></a></dt>
+<dd><p>Function to load and preprocess found injections for use in numpyro likelihood functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>sample_limit</strong><span class="classifier">int</span></dt><dd><p>If reweighting to a different reference population, number of found injections to use. No effect otherwise. Default 1e4</p>
+</dd>
+<dt><strong>reweight</strong><span class="classifier">bool</span></dt><dd><p>If <cite>True</cite>, reweight injections to the reference population defined in <cite>weighting_function</cite>. Default <cite>False</cite></p>
+</dd>
+<dt><strong>weighting_function</strong><span class="classifier">func</span></dt><dd><p>Function defining new reference population to reweight to. No effect if <cite>reweight=True</cite>. Default <cite>reweighting_function_arlnm1_q</cite></p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>injectionDict</strong><span class="classifier">dict</span></dt><dd><p>Dictionary containing found injections and associated draw probabilities, for downstream use in hierarchical inference</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="getData.getSamples">
+<span class="sig-prename descclassname"><span class="pre">getData.</span></span><span class="sig-name descname"><span class="pre">getSamples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_limit=2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bbh_only=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reweight=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting_function=&lt;function</span> <span class="pre">reweighting_function_arlnm1_q&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/getData.html#getSamples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#getData.getSamples" title="Permalink to this definition"></a></dt>
+<dd><p>Function to load and preprocess BBH posterior samples for use in numpyro likelihood functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>sample_limit</strong><span class="classifier">int</span></dt><dd><p>Number of posterior samples to retain for each event, for use in population inference (default 2000)</p>
+</dd>
+<dt><strong>bbh_only</strong><span class="classifier">bool</span></dt><dd><p>If True, will exclude samples for BNS, NSBH, and mass-gap events (default True)</p>
+</dd>
+<dt><strong>reweight</strong><span class="classifier">bool</span></dt><dd><p>If True, reweight posteriors to the reference population defined in <cite>weighting_function</cite>. Default <cite>False</cite></p>
+</dd>
+<dt><strong>weighting_function</strong><span class="classifier">func</span></dt><dd><p>Function defining new reference population to reweight to. No effect if <cite>reweight=True</cite>. Default <cite>reweighting_function_arlnm1_q</cite></p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>sampleDict</strong><span class="classifier">dict</span></dt><dd><p>Dictionary containing posterior samples, for downstream use in hierarchical inference</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="getData.reweighting_function_arlnm1_q">
+<span class="sig-prename descclassname"><span class="pre">getData.</span></span><span class="sig-name descname"><span class="pre">reweighting_function_arlnm1_q</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dVdz</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/getData.html#reweighting_function_arlnm1_q"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#getData.reweighting_function_arlnm1_q" title="Permalink to this definition"></a></dt>
+<dd><p>Function that computes weights under a fixed population similar to that preferred by
+the ln(m1),q AR1 analysis. Preemptively reweighting posteriors and injections to this population
+can help increase sampling efficiency when subsequently inferring the actual population distribution of BBHs</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>m1</strong><span class="classifier"><cite>np.array</cite></span></dt><dd><p>Primary BBH masses (units of Msun)</p>
+</dd>
+<dt><strong>m2</strong><span class="classifier"><cite>np.array</cite></span></dt><dd><p>Secondary BBH masses (units of Msun)</p>
+</dd>
+<dt><strong>a1</strong><span class="classifier"><cite>np.array</cite></span></dt><dd><p>Primary spin magnitudes</p>
+</dd>
+<dt><strong>a2</strong><span class="classifier"><cite>np.array</cite></span></dt><dd><p>Secondary spin magnitudes</p>
+</dd>
+<dt><strong>cost1</strong><span class="classifier"><cite>np.array</cite></span></dt><dd><p>Cosines of primary spin-orbit tilts</p>
+</dd>
+<dt><strong>cost2</strong><span class="classifier"><cite>np.array</cite></span></dt><dd><p>Cosines of secondary spin-orbit tilts</p>
+</dd>
+<dt><strong>z</strong><span class="classifier"><cite>np.array</cite></span></dt><dd><p>Redshifts</p>
+</dd>
+<dt><strong>dVdz</strong><span class="classifier"><cite>np.array</cite></span></dt><dd><p>Differential comoving volumes correspond to each redshift in <cite>z</cite></p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>dP_dm1m2a1a2cost1cost2z</strong><span class="classifier"><cite>np.array</cite></span></dt><dd><p>Probability density evaluated at each <cite>(m1,m2,a1,a2,cost1,cost2,z)</cite> under the target population</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Tom Callister &amp; Will Farr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

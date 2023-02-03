@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utilities module &mdash; autoregressive-bbh-inference  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> autoregressive-bbh-inference
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="making-figures.html">Figure generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running-the-analyses.html">Running the analyses</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">autoregressive-bbh-inference</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">utilities module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/utilities.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-utilities">
+<span id="utilities-module"></span><h1>utilities module<a class="headerlink" href="#module-utilities" title="Permalink to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="utilities.build_ar1">
+<span class="sig-prename descclassname"><span class="pre">utilities.</span></span><span class="sig-name descname"><span class="pre">build_ar1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">total</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_element</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utilities.html#build_ar1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utilities.build_ar1" title="Permalink to this definition"></a></dt>
+<dd><p>Helper function to iteratively construct an AR process, given a previous value and a new parameter/innovation pair. Used together with <cite>jax.lax.scan</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>total</strong><span class="classifier">float</span></dt><dd><p>Processes’ value at the previous iteration</p>
+</dd>
+<dt><strong>new_element</strong><span class="classifier">tuple</span></dt><dd><p>Tuple <cite>(c,w)</cite> containing new parameter/innovation; see Eq. 4 of the associated paper</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>total</strong><span class="classifier">float</span></dt><dd><p>AR process value at new point</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utilities.calculate_gaussian_2D">
+<span class="sig-prename descclassname"><span class="pre">utilities.</span></span><span class="sig-name descname"><span class="pre">calculate_gaussian_2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chiEff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chiP</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_eff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma2_eff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma2_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chi_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utilities.html#calculate_gaussian_2D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utilities.calculate_gaussian_2D" title="Permalink to this definition"></a></dt>
+<dd><p>Function to evaluate our bivariate gaussian probability distribution on chiEff and chiP
+See e.g. <a class="reference external" href="http://mathworld.wolfram.com/BivariateNormalDistribution.html">http://mathworld.wolfram.com/BivariateNormalDistribution.html</a></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>chiEff</strong><span class="classifier">float</span></dt><dd><p>Array of chi-effective values at which to evaluate probability distribution</p>
+</dd>
+<dt><strong>chiP</strong><span class="classifier">float</span></dt><dd><p>Array of chi-p values</p>
+</dd>
+<dt><strong>mu_eff</strong><span class="classifier">float</span></dt><dd><p>Mean of the BBH chi-effective distribution</p>
+</dd>
+<dt><strong>sigma2_eff</strong><span class="classifier">float</span></dt><dd><p>Variance of the BBH chi-effective distribution</p>
+</dd>
+<dt><strong>mu_p</strong><span class="classifier">float</span></dt><dd><p>Mean of the BBH chi-p distribution</p>
+</dd>
+<dt><strong>sigma2_p</strong><span class="classifier">float</span></dt><dd><p>Variance of the BBH chi-p distribution</p>
+</dd>
+<dt><strong>cov</strong><span class="classifier">float</span></dt><dd><p>Degree of covariance (off-diagonal elements of the covariance matrix are cov*sigma_eff*sigma_p)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>y</strong><span class="classifier"><cite>np.array</cite></span></dt><dd><p>Array of probability densities</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utilities.get_value_from_logit">
+<span class="sig-prename descclassname"><span class="pre">utilities.</span></span><span class="sig-name descname"><span class="pre">get_value_from_logit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logit_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utilities.html#get_value_from_logit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utilities.get_value_from_logit" title="Permalink to this definition"></a></dt>
+<dd><p>Function to map a variable <cite>logit_x</cite>, defined on <cite>(-inf,+inf)</cite>, to a quantity <cite>x</cite>
+defined on the interval <cite>(x_min,x_max)</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>logit_x</strong><span class="classifier">float</span></dt><dd><p>Quantity to inverse-logit transform</p>
+</dd>
+<dt><strong>x_min</strong><span class="classifier">float</span></dt><dd><p>Lower bound of <cite>x</cite></p>
+</dd>
+<dt><strong>x_max</strong><span class="classifier">float</span></dt><dd><p>Upper bound of <cite>x</cite></p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>x</strong><span class="classifier">float</span></dt><dd><p>The inverse logit transform of <cite>logit_x</cite></p>
+</dd>
+<dt><strong>dlogit_dx</strong><span class="classifier">float</span></dt><dd><p>The Jacobian between <cite>logit_x</cite> and <cite>x</cite>; divide by this quantity to convert a uniform prior on <cite>logit_x</cite> to a uniform prior on <cite>x</cite></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utilities.massModel">
+<span class="sig-prename descclassname"><span class="pre">utilities.</span></span><span class="sig-name descname"><span class="pre">massModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_m1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig_m1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_peak</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mMax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mMin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dmMax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dmMin</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utilities.html#massModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utilities.massModel" title="Permalink to this definition"></a></dt>
+<dd><p>Baseline primary mass model, described as a mixture between a power law
+and gaussian, with exponential tapering functions at high and low masses</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>m1</strong><span class="classifier">array or float</span></dt><dd><p>Primary masses at which to evaluate probability densities</p>
+</dd>
+<dt><strong>alpha</strong><span class="classifier">float</span></dt><dd><p>Power-law index</p>
+</dd>
+<dt><strong>mu_m1</strong><span class="classifier">float</span></dt><dd><p>Location of possible Gaussian peak</p>
+</dd>
+<dt><strong>sig_m1</strong><span class="classifier">float</span></dt><dd><p>Stanard deviation of possible Gaussian peak</p>
+</dd>
+<dt><strong>f_peak</strong><span class="classifier">float</span></dt><dd><p>Approximate fraction of events contained within Gaussian peak (not exact due to tapering)</p>
+</dd>
+<dt><strong>mMax</strong><span class="classifier">float</span></dt><dd><p>Location at which high-mass tapering begins</p>
+</dd>
+<dt><strong>mMin</strong><span class="classifier">float</span></dt><dd><p>Location at which low-mass tapering begins</p>
+</dd>
+<dt><strong>dmMax</strong><span class="classifier">float</span></dt><dd><p>Scale width of high-mass tapering function</p>
+</dd>
+<dt><strong>dmMin</strong><span class="classifier">float</span></dt><dd><p>Scale width of low-mass tapering function</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>p_m1s</strong><span class="classifier">jax.numpy.array</span></dt><dd><p>Unnormalized array of probability densities</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utilities.truncatedNormal">
+<span class="sig-prename descclassname"><span class="pre">utilities.</span></span><span class="sig-name descname"><span class="pre">truncatedNormal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lowCutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">highCutoff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utilities.html#truncatedNormal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utilities.truncatedNormal" title="Permalink to this definition"></a></dt>
+<dd><p>Jax-enabled truncated normal distribution</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>samples</strong><span class="classifier"><cite>jax.numpy.array</cite> or float</span></dt><dd><p>Locations at which to evaluate probability density</p>
+</dd>
+<dt><strong>mu</strong><span class="classifier">float</span></dt><dd><p>Mean of truncated normal</p>
+</dd>
+<dt><strong>sigma</strong><span class="classifier">float</span></dt><dd><p>Standard deviation of truncated normal</p>
+</dd>
+<dt><strong>lowCutoff</strong><span class="classifier">float</span></dt><dd><p>Lower truncation bound</p>
+</dd>
+<dt><strong>highCutoff</strong><span class="classifier">float</span></dt><dd><p>Upper truncation bound</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>ps</strong><span class="classifier">jax.numpy.array or float</span></dt><dd><p>Probability density at the locations of <cite>samples</cite></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utilities.truncated_gaussian">
+<span class="sig-prename descclassname"><span class="pre">utilities.</span></span><span class="sig-name descname"><span class="pre">truncated_gaussian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_cutoff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utilities.html#truncated_gaussian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utilities.truncated_gaussian" title="Permalink to this definition"></a></dt>
+<dd><p>Function defining the probability density due to a truncated Gaussian</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>xs</strong><span class="classifier">np.array</span></dt><dd><p>Array of values at which to evaluate probability density</p>
+</dd>
+<dt><strong>mu</strong><span class="classifier">float</span></dt><dd><p>Mean parameter of truncated normal</p>
+</dd>
+<dt><strong>sigma</strong><span class="classifier">float</span></dt><dd><p>Standard deviation parameter of truncated normal</p>
+</dd>
+<dt><strong>low_cutoff</strong><span class="classifier">float</span></dt><dd><p>Lower cutoff</p>
+</dd>
+<dt><strong>high_cutoff</strong><span class="classifier">float</span></dt><dd><p>Upper cutoff</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>ys</strong><span class="classifier">np.array</span></dt><dd><p>Corresponding probability densities</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Tom Callister &amp; Will Farr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

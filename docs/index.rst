@@ -34,6 +34,8 @@ Contents:
     :maxdepth: 1
 
     getting-started
+    making-figures
+    running-the-analyses
 
 * :ref:`modindex`
 * :ref:`search`

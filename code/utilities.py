@@ -88,13 +88,7 @@ def get_value_from_logit(logit_x,x_min,x_max):
 
     """
     Function to map a variable `logit_x`, defined on `(-inf,+inf)`, to a quantity `x`
-    defined on the interval `(x_min,x_max)`. Here, the logit transform is given by
-
-    $
-    \begin{equation}
-    \mathrm{logit}x = \log\left( \frac{x - x_\mathrm{min}}{ x_\mathrm{max} - x} \right)
-    \end{equation}
-    $
+    defined on the interval `(x_min,x_max)`.
 
     Parameters
     ----------
@@ -122,8 +116,7 @@ def get_value_from_logit(logit_x,x_min,x_max):
 def build_ar1(total,new_element):
 
     """
-    Helper function to iteratively construct an AR process, given a previous value and a new parameter/innovation pair.
-    Used together with `jax.lax.scan`
+    Helper function to iteratively construct an AR process, given a previous value and a new parameter/innovation pair. Used together with `jax.lax.scan`
 
     Parameters
     ----------

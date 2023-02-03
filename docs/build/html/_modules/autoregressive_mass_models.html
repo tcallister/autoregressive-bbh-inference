@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>autoregressive_mass_models &mdash; autoregressive-bbh-inference  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> autoregressive-bbh-inference
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../making-figures.html">Figure generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../running-the-analyses.html">Running the analyses</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">autoregressive-bbh-inference</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">autoregressive_mass_models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for autoregressive_mass_models</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpyro</span>
+<span class="kn">import</span> <span class="nn">numpyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
+<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
+<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">vmap</span><span class="p">,</span><span class="n">lax</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">custom_distributions</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">utilities</span> <span class="kn">import</span> <span class="o">*</span>
+
+<div class="viewcode-block" id="ar_lnm1_q"><a class="viewcode-back" href="../autoregressive_mass_models.html#autoregressive_mass_models.ar_lnm1_q">[docs]</a><span class="k">def</span> <span class="nf">ar_lnm1_q</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">,</span><span class="n">injectionDict</span><span class="p">,</span><span class="n">full_lnm1_q_data</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Likelihood model in which the BBH ln(m1) and q distributions are described as AR(1) processes, for use within `numpyro`.</span>
+<span class="sd">    The distributions redshifts and spins are simultaneously fit.</span>
+<span class="sd">    The BBH merger rate is assumed to grow as a power law in `(1+z)`.</span>
+<span class="sd">    Spin magnitudes are described via a truncated normal distribution, and spin cosine tilts are modeled as another</span>
+<span class="sd">    truncated normal, whose mean is fixed to `cos(theta)=1`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sampleDict : dict</span>
+<span class="sd">        Precomputed dictionary containing posterior samples for each event in our catalog, as prepared by `getData.getSamples`</span>
+<span class="sd">    injectionDict : dict</span>
+<span class="sd">        Precomputed dictionary containing successfully recovered injections, as prepared by `getData.getInjections`</span>
+<span class="sd">    full_lnm1_q_data : dict</span>
+<span class="sd">        Precomputed dictionary containing accumulated list of *all* `lnm1` samples and `q`, among both event posteriors and injections.</span>
+<span class="sd">        Dictionary also contains information needed to sort list into numerical order, or into event-based order.</span>
+<span class="sd">        Prepared in `run_ar_lnm1_q.py`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Read complete list of sorted lnm1 samples and deltas between them</span>
+    <span class="c1"># Additionally split deltas into those below and above our reference mass</span>
+    <span class="n">all_lnm1_samples</span> <span class="o">=</span> <span class="n">full_lnm1_q_data</span><span class="p">[</span><span class="s1">&#39;all_lnm1_samples&#39;</span><span class="p">]</span>
+    <span class="n">lnm1_deltas</span> <span class="o">=</span> <span class="n">full_lnm1_q_data</span><span class="p">[</span><span class="s1">&#39;lnm1_deltas&#39;</span><span class="p">]</span>
+    <span class="n">ind_m20</span> <span class="o">=</span> <span class="n">full_lnm1_q_data</span><span class="p">[</span><span class="s1">&#39;ind_m20&#39;</span><span class="p">]</span>
+    <span class="n">lnm1_deltas_low</span> <span class="o">=</span> <span class="n">lnm1_deltas</span><span class="p">[:</span><span class="n">ind_m20</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">lnm1_deltas_high</span> <span class="o">=</span> <span class="n">lnm1_deltas</span><span class="p">[</span><span class="n">ind_m20</span><span class="p">:]</span>
+
+    <span class="c1"># Similarly read out list of sorted mass ratios and deltas</span>
+    <span class="n">all_q_samples</span> <span class="o">=</span> <span class="n">full_lnm1_q_data</span><span class="p">[</span><span class="s1">&#39;all_q_samples&#39;</span><span class="p">]</span>
+    <span class="n">q_deltas</span> <span class="o">=</span> <span class="n">full_lnm1_q_data</span><span class="p">[</span><span class="s1">&#39;q_deltas&#39;</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1">###################################</span>
+    <span class="c1"># Constructing our lnm1 AR1 process</span>
+    <span class="c1">###################################</span>
+
+    <span class="c1"># First get variance of the process</span>
+    <span class="c1"># We will sample from a half normal distribution, but override this with a quadratic prior</span>
+    <span class="c1"># on the processes&#39; standard deviation; see Eq. B1</span>
+    <span class="n">ar_lnm1_std</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ar_lnm1_std&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;ar_lnm1_std_prior&quot;</span><span class="p">,</span><span class="n">ar_lnm1_std</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="p">(</span><span class="n">ar_lnm1_std</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span><span class="o">**</span><span class="mi">4</span><span class="o">/</span><span class="mf">8.75</span><span class="p">)</span>
+
+    <span class="c1"># Next, the autocorrelation length</span>
+    <span class="n">log_ar_lnm1_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;log_ar_lnm1_tau&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.75</span><span class="p">))</span>
+    <span class="n">ar_lnm1_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;ar_lnm1_tau&quot;</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">log_ar_lnm1_tau</span><span class="p">)</span>
+
+    <span class="c1"># As discussed in Appendix B, we need a regularizing log-likelihood factor to help stabilize our inference; see Eq. B3</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;lnm1_regularization&quot;</span><span class="p">,</span><span class="o">-</span><span class="p">(</span><span class="n">ar_lnm1_std</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ar_lnm1_tau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="mf">0.5</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Sample an initial rate density at the reference mass point</span>
+    <span class="c1"># First draw un unscaled variable from N(0,1), then rescale by the standard deviation</span>
+    <span class="n">ln_f_lnm1_ref_unscaled</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ln_f_lnm1_ref_unscaled&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">ln_f_lnm1_ref</span> <span class="o">=</span> <span class="n">ln_f_lnm1_ref_unscaled</span><span class="o">*</span><span class="n">ar_lnm1_std</span>
+
+    <span class="c1"># Generate forward steps and join to reference value, following the procedure outlined in Appendix A</span>
+    <span class="c1"># First generate a sequence of unnormalized steps from N(0,1), then rescale to compute weights and innovations</span>
+    <span class="n">lnm1_steps_forward</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;lnm1_steps_forward&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">sample_shape</span><span class="o">=</span><span class="p">(</span><span class="n">lnm1_deltas_high</span><span class="o">.</span><span class="n">size</span><span class="p">,))</span>
+    <span class="n">lnm1_phis_forward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lnm1_deltas_high</span><span class="o">/</span><span class="n">ar_lnm1_tau</span><span class="p">)</span>
+    <span class="n">lnm1_ws_forward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">expm1</span><span class="p">(</span><span class="o">-</span><span class="mf">2.</span><span class="o">*</span><span class="n">lnm1_deltas_high</span><span class="o">/</span><span class="n">ar_lnm1_tau</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="n">ar_lnm1_std</span><span class="o">*</span><span class="n">lnm1_steps_forward</span><span class="p">)</span>
+    <span class="n">final</span><span class="p">,</span><span class="n">ln_f_lnm1s_high</span> <span class="o">=</span> <span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">build_ar1</span><span class="p">,</span><span class="n">ln_f_lnm1_ref</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lnm1_phis_forward</span><span class="p">,</span><span class="n">lnm1_ws_forward</span><span class="p">])))</span> 
+    <span class="n">ln_f_lnm1s</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ln_f_lnm1_ref</span><span class="p">,</span><span class="n">ln_f_lnm1s_high</span><span class="p">)</span>
+
+    <span class="c1"># Generate backward steps and prepend to forward steps above following an analogous procedure</span>
+    <span class="n">lnm1_steps_backward</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;lnm1_steps_backward&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">sample_shape</span><span class="o">=</span><span class="p">(</span><span class="n">lnm1_deltas_low</span><span class="o">.</span><span class="n">size</span><span class="p">,))</span>
+    <span class="n">lnm1_phis_backward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lnm1_deltas_low</span><span class="o">/</span><span class="n">ar_lnm1_tau</span><span class="p">)</span>
+    <span class="n">lnm1_ws_backward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">expm1</span><span class="p">(</span><span class="o">-</span><span class="mf">2.</span><span class="o">*</span><span class="n">lnm1_deltas_low</span><span class="o">/</span><span class="n">ar_lnm1_tau</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="n">ar_lnm1_std</span><span class="o">*</span><span class="n">lnm1_steps_backward</span><span class="p">)</span>
+    <span class="n">final</span><span class="p">,</span><span class="n">ln_f_lnm1s_low</span> <span class="o">=</span> <span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">build_ar1</span><span class="p">,</span><span class="n">ln_f_lnm1_ref</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lnm1_phis_backward</span><span class="p">,</span><span class="n">lnm1_ws_backward</span><span class="p">])))</span>
+    <span class="n">ln_f_lnm1s</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ln_f_lnm1s_low</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">ln_f_lnm1s</span><span class="p">)</span>
+
+    <span class="c1"># Exponentiate and save</span>
+    <span class="n">f_lnm1s</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ln_f_lnm1s</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;f_lnm1s&quot;</span><span class="p">,</span><span class="n">f_lnm1s</span><span class="p">)</span>
+
+    <span class="c1"># Reverse sort our AR process back into an array in which injections and each event&#39;s PE samples are grouped</span>
+    <span class="n">f_lnm1s_eventSorted</span> <span class="o">=</span> <span class="n">f_lnm1s</span><span class="p">[</span><span class="n">full_lnm1_q_data</span><span class="p">[</span><span class="s1">&#39;lnm1_reverseSorting&#39;</span><span class="p">]]</span>
+
+    <span class="c1">############################</span>
+    <span class="c1"># Construct AR1 process in q</span>
+    <span class="c1">############################</span>
+
+    <span class="c1"># Follow the same strategies to construct an AR1 process over mass ratio</span>
+    <span class="c1"># First get the process&#39; standard deviation</span>
+    <span class="n">ar_q_std</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ar_q_std&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;ar_q_std_prior&quot;</span><span class="p">,</span><span class="n">ar_q_std</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="p">(</span><span class="n">ar_q_std</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span><span class="o">**</span><span class="mi">4</span><span class="o">/</span><span class="mf">8.75</span><span class="p">)</span>
+
+    <span class="c1"># Next the autocorrelation length</span>
+    <span class="n">log_ar_q_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;log_ar_q_tau&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="o">-</span><span class="mf">0.3</span><span class="p">,</span><span class="mf">0.5</span><span class="p">))</span>
+    <span class="n">ar_q_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;ar_q_tau&quot;</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">log_ar_q_tau</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;q_regularization&quot;</span><span class="p">,</span><span class="o">-</span><span class="p">(</span><span class="n">ar_q_std</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ar_q_tau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="mf">0.5</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Choose an initial reference value</span>
+    <span class="n">ln_f_q_ref_unscaled</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ln_f_q_ref_unscaled&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">ln_f_q_ref</span> <span class="o">=</span> <span class="n">ln_f_q_ref_unscaled</span><span class="o">*</span><span class="n">ar_q_std</span>
+
+    <span class="c1"># Generate backward steps and prepend to reference value</span>
+    <span class="n">q_steps_backward</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;q_steps_backward&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">sample_shape</span><span class="o">=</span><span class="p">(</span><span class="n">q_deltas</span><span class="o">.</span><span class="n">size</span><span class="p">,))</span>
+    <span class="n">q_phis_backward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">q_deltas</span><span class="o">/</span><span class="n">ar_q_tau</span><span class="p">)</span>
+    <span class="n">q_ws_backward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">expm1</span><span class="p">(</span><span class="o">-</span><span class="mf">2.</span><span class="o">*</span><span class="n">q_deltas</span><span class="o">/</span><span class="n">ar_q_tau</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="n">ar_q_std</span><span class="o">*</span><span class="n">q_steps_backward</span><span class="p">)</span>
+    <span class="n">final</span><span class="p">,</span><span class="n">ln_f_qs</span> <span class="o">=</span> <span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">build_ar1</span><span class="p">,</span><span class="n">ln_f_q_ref</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">q_phis_backward</span><span class="p">,</span><span class="n">q_ws_backward</span><span class="p">])))</span>
+    <span class="n">ln_f_qs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ln_f_qs</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">ln_f_q_ref</span><span class="p">)</span>
+
+    <span class="c1"># Exponentiate and save</span>
+    <span class="n">f_qs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ln_f_qs</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;f_qs&quot;</span><span class="p">,</span><span class="n">f_qs</span><span class="p">)</span>
+    <span class="n">f_qs_eventSorted</span> <span class="o">=</span> <span class="n">f_qs</span><span class="p">[</span><span class="n">full_lnm1_q_data</span><span class="p">[</span><span class="s1">&#39;q_reverseSorting&#39;</span><span class="p">]]</span>
+
+    <span class="c1">##############################</span>
+    <span class="c1"># Remaining degrees of freedom</span>
+    <span class="c1">##############################</span>
+
+    <span class="c1"># Sample our hyperparameters</span>
+    <span class="c1"># R20: Differential merger rate (dR/dlnm1) at reference m1 and z values</span>
+    <span class="c1"># mu_chi: Mean of spin magnitude distribution; see Eq. C4</span>
+    <span class="c1"># logsig_chi: Log10 spin magnitude standard deviation; see Eq. C4</span>
+    <span class="c1"># sig_cost: Standard deviation of cosine spin tilts; see Eq. C5</span>
+    <span class="c1"># kappa: Power-law index on redshift evolution of the merger rate; see Eq. C6</span>
+
+    <span class="c1"># Sample the merger rate at our reference mass and redshift values</span>
+    <span class="n">logR20</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;logR20&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+    <span class="n">R20</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;R20&quot;</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">logR20</span><span class="p">)</span>
+
+    <span class="c1"># Sample our baseline hyperparameters for redshift and component spins</span>
+    <span class="c1"># Draw some parameters directly</span>
+    <span class="n">mu_chi</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;mu_chi&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">1.</span><span class="p">))</span>  
+    <span class="n">logsig_chi</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;logsig_chi&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span><span class="mf">0.</span><span class="p">))</span>  
+    <span class="n">kappa</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;kappa&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+
+    <span class="c1"># Some parameters have posteriors that encounter their prior boundaries.</span>
+    <span class="c1"># In this case it is easier to sample in logit space over the (-inf,inf) interval,</span>
+    <span class="c1"># then transform back to the actual parameter of interest.</span>
+
+    <span class="c1"># First draw a logit quantity from a normal distribution, then override this normal</span>
+    <span class="c1"># prior to impose a uniform prior on the physical parameter of interest</span>
+    <span class="n">logit_sig_cost</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;logit_sig_cost&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">logit_std</span><span class="p">))</span>  
+    <span class="n">sig_cost</span><span class="p">,</span><span class="n">jac_sig_cost</span> <span class="o">=</span> <span class="n">get_value_from_logit</span><span class="p">(</span><span class="n">logit_sig_cost</span><span class="p">,</span><span class="mf">0.3</span><span class="p">,</span><span class="mf">2.</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;sig_cost&quot;</span><span class="p">,</span><span class="n">sig_cost</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;p_sig_cost&quot;</span><span class="p">,</span><span class="n">logit_sig_cost</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">logit_std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">jac_sig_cost</span><span class="p">))</span>
+
+    <span class="c1"># Fixed params: mean of cosine spin tilts; Eq. C5</span>
+    <span class="n">mu_cost</span> <span class="o">=</span> <span class="mf">1.</span>
+
+    <span class="c1"># Compute normalization factors necessary to ensure that `R20` is correctly defined as the</span>
+    <span class="c1"># merger rate at the desired reference mass and redshift values</span>
+    <span class="n">f_z_norm</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="mf">0.2</span><span class="p">)</span><span class="o">**</span><span class="n">kappa</span>
+
+    <span class="c1"># Entropy penalization</span>
+    <span class="c1">#p_lnm1 = f_lnm1s/jnp.trapz(f_lnm1s,all_lnm1_samples)</span>
+    <span class="c1">#p_q = f_qs/jnp.trapz(f_qs,all_q_samples)</span>
+    <span class="c1">#S_lnm1 = -jnp.trapz(p_lnm1*jnp.log(p_lnm1),all_lnm1_samples)</span>
+    <span class="c1">#S_q = -jnp.trapz(p_q*jnp.log(p_q),all_q_samples)</span>
+    <span class="c1">#numpyro.factor(&quot;entropy&quot;,S_lnm1+S_q)</span>
+
+    <span class="c1">###############################</span>
+    <span class="c1"># Expected number of detections</span>
+    <span class="c1">###############################</span>
+
+    <span class="c1"># Read out found injections and draw probabilities</span>
+    <span class="n">m1_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;m1&#39;</span><span class="p">]</span>
+    <span class="n">a1_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span>
+    <span class="n">a2_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span>
+    <span class="n">cost1_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;cost1&#39;</span><span class="p">]</span>
+    <span class="n">cost2_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;cost2&#39;</span><span class="p">]</span>
+    <span class="n">z_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span>
+    <span class="n">dVdz_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;dVdz&#39;</span><span class="p">]</span>
+    <span class="n">p_draw</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;p_draw_m1m2z&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;p_draw_a1a2cost1cost2&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Compute proposed population weights</span>
+    <span class="c1"># Note that injection draw weights are defined as dP/dm1*dm2, rather than dP/dlnm1*dq (as we are using here)</span>
+    <span class="c1"># This requires an additional factor of 1/m1 on both f_m1_det and f_m2_det below</span>
+    <span class="c1"># Additionally, draw weights are defined as probability densities over redshift and detector frame time,</span>
+    <span class="c1"># necessitating us to multiply by dVdz*(1.+z)**(-1) to convert from a source-frame rate density</span>
+    <span class="n">f_m1_det</span> <span class="o">=</span> <span class="n">f_lnm1s_eventSorted</span><span class="p">[</span><span class="n">full_lnm1_q_data</span><span class="p">[</span><span class="s1">&#39;injections_from_allSamples&#39;</span><span class="p">]]</span><span class="o">/</span><span class="n">m1_det</span>
+    <span class="n">f_m2_det</span> <span class="o">=</span> <span class="n">f_qs_eventSorted</span><span class="p">[</span><span class="n">full_lnm1_q_data</span><span class="p">[</span><span class="s1">&#39;injections_from_allSamples&#39;</span><span class="p">]]</span><span class="o">/</span><span class="n">m1_det</span>
+    <span class="n">f_z_det</span> <span class="o">=</span> <span class="n">dVdz_det</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="n">z_det</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">kappa</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span><span class="o">/</span><span class="n">f_z_norm</span>
+    <span class="n">p_a1_det</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">a1_det</span><span class="p">,</span><span class="n">mu_chi</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">logsig_chi</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">p_a2_det</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">a2_det</span><span class="p">,</span><span class="n">mu_chi</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">logsig_chi</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">p_cost1_det</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">cost1_det</span><span class="p">,</span><span class="n">mu_cost</span><span class="p">,</span><span class="n">sig_cost</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">p_cost2_det</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">cost2_det</span><span class="p">,</span><span class="n">mu_cost</span><span class="p">,</span><span class="n">sig_cost</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># All together, the quantity below is the detection rate dN/dm1*dm2*da1*da2*dcost1*dcost2*dz*dt_det</span>
+    <span class="n">R_pop_det</span> <span class="o">=</span> <span class="n">R20</span><span class="o">*</span><span class="n">f_m1_det</span><span class="o">*</span><span class="n">f_m2_det</span><span class="o">*</span><span class="n">f_z_det</span><span class="o">*</span><span class="n">p_a1_det</span><span class="o">*</span><span class="n">p_a2_det</span><span class="o">*</span><span class="n">p_cost1_det</span><span class="o">*</span><span class="n">p_cost2_det</span>
+
+    <span class="c1"># Form ratio of proposed weights over draw weights</span>
+    <span class="c1"># The division by 2 corresponds to the fact that injections are uniformly placed over the 2 year observation period</span>
+    <span class="n">inj_weights</span> <span class="o">=</span> <span class="n">R_pop_det</span><span class="o">/</span><span class="p">(</span><span class="n">p_draw</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+    
+    <span class="c1"># As a fit diagnostic, compute effective number of injections.</span>
+    <span class="n">nEff_inj</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">inj_weights</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">inj_weights</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">nObs</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;nEff_inj_per_event&quot;</span><span class="p">,</span><span class="n">nEff_inj</span><span class="o">/</span><span class="n">nObs</span><span class="p">)</span>
+
+    <span class="c1"># Compute total expected number of detections and add to log-likelihood</span>
+    <span class="n">Nexp</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">inj_weights</span><span class="p">)</span><span class="o">/</span><span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;nTrials&#39;</span><span class="p">]</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span><span class="o">-</span><span class="n">Nexp</span><span class="p">)</span>
+
+    <span class="c1">###############################</span>
+    <span class="c1"># Compute per-event likelihoods</span>
+    <span class="c1">###############################</span>
+
+    <span class="c1"># This function defines the per-event log-likelihood. It expects the following arguments:</span>
+    <span class="c1"># m1_sample, z_sample...: Arrays of posterior samples for the given event</span>
+    <span class="c1"># priors: Corresponding array of prior probabilities assigned to each sample</span>
+    <span class="c1"># ar_indices: Indices used to retrieve the correct AR1 rates corresponding to this event&#39;s samples</span>
+    <span class="k">def</span> <span class="nf">logp</span><span class="p">(</span><span class="n">m1_sample</span><span class="p">,</span><span class="n">z_sample</span><span class="p">,</span><span class="n">dVdz_sample</span><span class="p">,</span><span class="n">a1_sample</span><span class="p">,</span><span class="n">a2_sample</span><span class="p">,</span><span class="n">cost1_sample</span><span class="p">,</span><span class="n">cost2_sample</span><span class="p">,</span><span class="n">priors</span><span class="p">,</span><span class="n">ar_indices</span><span class="p">):</span>
+
+        <span class="c1"># Compute proposed population weights, analogous to calculation for injections done above</span>
+        <span class="c1"># Use `ar_indices` to extract the correct values of `f_lnm1s_eventSorted` and `f_qs_eventSorted`</span>
+        <span class="c1"># corresponding to each of this event&#39;s posterior samples</span>
+        <span class="n">f_m1</span> <span class="o">=</span> <span class="n">f_lnm1s_eventSorted</span><span class="p">[</span><span class="n">ar_indices</span><span class="p">]</span><span class="o">/</span><span class="n">m1_sample</span>
+        <span class="n">f_m2</span> <span class="o">=</span> <span class="n">f_qs_eventSorted</span><span class="p">[</span><span class="n">ar_indices</span><span class="p">]</span><span class="o">/</span><span class="n">m1_sample</span>
+        <span class="n">f_z</span> <span class="o">=</span> <span class="n">dVdz_sample</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="n">z_sample</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">kappa</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span><span class="o">/</span><span class="n">f_z_norm</span>
+        <span class="n">p_a1</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">a1_sample</span><span class="p">,</span><span class="n">mu_chi</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">logsig_chi</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">p_a2</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">a2_sample</span><span class="p">,</span><span class="n">mu_chi</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">logsig_chi</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">p_cost1</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">cost1_sample</span><span class="p">,</span><span class="n">mu_cost</span><span class="p">,</span><span class="n">sig_cost</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">p_cost2</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">cost2_sample</span><span class="p">,</span><span class="n">mu_cost</span><span class="p">,</span><span class="n">sig_cost</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># All together, the quantity below is the detection rate dN/dm1*dm2*da1*da2*dcost1*dcost2*dz*dt_det</span>
+        <span class="n">R_pop</span> <span class="o">=</span> <span class="n">R20</span><span class="o">*</span><span class="n">f_m1</span><span class="o">*</span><span class="n">f_m2</span><span class="o">*</span><span class="n">f_z</span><span class="o">*</span><span class="n">p_a1</span><span class="o">*</span><span class="n">p_a2</span><span class="o">*</span><span class="n">p_cost1</span><span class="o">*</span><span class="n">p_cost2</span>
+
+        <span class="c1"># Form ratio of proposed population weights to PE priors</span>
+        <span class="n">mc_weights</span> <span class="o">=</span> <span class="n">R_pop</span><span class="o">/</span><span class="n">priors</span>
+
+        <span class="c1"># Compute effective number of samples and return log-likelihood</span>
+        <span class="n">n_eff</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mc_weights</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mc_weights</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>     
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mc_weights</span><span class="p">)),</span><span class="n">n_eff</span>
+    
+    <span class="c1"># Map the log-likelihood function over each event in our catalog</span>
+    <span class="n">log_ps</span><span class="p">,</span><span class="n">n_effs</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">logp</span><span class="p">)(</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;m1&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;dVc_dz&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;cost1&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;cost2&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;z_prior&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;ar_indices&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]))</span>
+        
+    <span class="c1"># As a diagnostic, save minimum number of effective samples across all events</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s1">&#39;min_log_neff&#39;</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">n_effs</span><span class="p">)))</span>
+
+    <span class="c1"># Tally log-likelihoods across our catalog</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;logp&quot;</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_ps</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ar_lnm_q"><a class="viewcode-back" href="../autoregressive_mass_models.html#autoregressive_mass_models.ar_lnm_q">[docs]</a><span class="k">def</span> <span class="nf">ar_lnm_q</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">,</span><span class="n">injectionDict</span><span class="p">,</span><span class="n">full_lnm_q_data</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Likelihood model in which the BBH ln(m) and q distributions are described as AR(1) processes, for use within `numpyro`.</span>
+<span class="sd">    Specifically, the merger rate is assumed to take the form dR/dlnm1*dlnm2 \propto f(lnm1)*f(lnm2)*g(q).</span>
+<span class="sd">    The distributions redshifts and spins are simultaneously fit.</span>
+<span class="sd">    The BBH merger rate is assumed to grow as a power law in `(1+z)`.</span>
+<span class="sd">    Spin magnitudes are described via a truncated normal distribution, and spin cosine tilts are modeled as another</span>
+<span class="sd">    truncated normal, whose mean is fixed to `cos(theta)=1`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sampleDict : dict</span>
+<span class="sd">        Precomputed dictionary containing posterior samples for each event in our catalog, as prepared by `getData.getSamples`</span>
+<span class="sd">    injectionDict : dict</span>
+<span class="sd">        Precomputed dictionary containing successfully recovered injections, as prepared by `getData.getInjections`</span>
+<span class="sd">    full_lnm_q_data : dict</span>
+<span class="sd">        Precomputed dictionary containing accumulated list of *all* `lnm` samples and `q`, among both event posteriors and injections.</span>
+<span class="sd">        Dictionary also contains information needed to sort list into numerical order, or into event-based order.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Read complete list of sorted lnm1 samples and deltas between them</span>
+    <span class="c1"># Additionally split deltas into those below and above our reference mass</span>
+    <span class="n">all_lnm_samples</span> <span class="o">=</span> <span class="n">full_lnm_q_data</span><span class="p">[</span><span class="s1">&#39;lnm_allSamples&#39;</span><span class="p">]</span>
+    <span class="n">ind_m20</span> <span class="o">=</span> <span class="n">full_lnm_q_data</span><span class="p">[</span><span class="s1">&#39;ind_m20&#39;</span><span class="p">]</span>
+    <span class="n">lnm_deltas</span> <span class="o">=</span> <span class="n">full_lnm_q_data</span><span class="p">[</span><span class="s1">&#39;lnm_deltas&#39;</span><span class="p">]</span>
+    <span class="n">lnm_deltas_low</span> <span class="o">=</span> <span class="n">lnm_deltas</span><span class="p">[:</span><span class="n">ind_m20</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">lnm_deltas_high</span> <span class="o">=</span> <span class="n">lnm_deltas</span><span class="p">[</span><span class="n">ind_m20</span><span class="p">:]</span>
+
+    <span class="c1"># Similarly read out list of sorted mass ratios and deltas</span>
+    <span class="n">all_q_samples</span> <span class="o">=</span>  <span class="n">full_lnm_q_data</span><span class="p">[</span><span class="s1">&#39;q_allSamples&#39;</span><span class="p">]</span>
+    <span class="n">q_deltas</span> <span class="o">=</span> <span class="n">full_lnm_q_data</span><span class="p">[</span><span class="s1">&#39;q_deltas&#39;</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1">###################################</span>
+    <span class="c1"># Constructing our lnm AR1 process</span>
+    <span class="c1">###################################</span>
+
+    <span class="c1"># First get variance of the process</span>
+    <span class="c1"># We will sample from a half normal distribution, but override this with a quadratic prior</span>
+    <span class="c1"># on the processes&#39; standard deviation; see Eq. B1</span>
+    <span class="n">ar_lnm_std</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ar_lnm_std&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;ar_lnm_std_prior&quot;</span><span class="p">,</span><span class="n">ar_lnm_std</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="p">(</span><span class="n">ar_lnm_std</span><span class="o">/</span><span class="mf">1.177</span><span class="p">)</span><span class="o">**</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="c1"># Next the autocorrelation length</span>
+    <span class="n">log_ar_lnm_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;log_ar_lnm_tau&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.75</span><span class="p">))</span>
+    <span class="n">ar_lnm_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;ar_lnm_tau&quot;</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">log_ar_lnm_tau</span><span class="p">)</span>
+
+    <span class="c1"># As discussed in Appendix B, we need a regularizing log-likelihood factor to help stabilize our inference; see Eq. B3</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;lnm_regularization&quot;</span><span class="p">,</span><span class="o">-</span><span class="p">(</span><span class="n">ar_lnm_std</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ar_lnm_tau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="mf">0.5</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Sample an initial rate density at reference point</span>
+    <span class="c1"># First draw un unscaled variable from N(0,1), then rescale by the standard deviation</span>
+    <span class="n">ln_f_lnm_ref_unscaled</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ln_f_lnm_ref_unscaled&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">ln_f_lnm_ref</span> <span class="o">=</span> <span class="n">ln_f_lnm_ref_unscaled</span><span class="o">*</span><span class="n">ar_lnm_std</span>
+
+    <span class="c1"># Generate forward steps and join to reference value, following the procedure outlined in Appendix A</span>
+    <span class="c1"># First generate a sequence of unnormalized steps from N(0,1), then rescale to compute weights and innovations</span>
+    <span class="n">lnm_steps_forward</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;lnm_steps_forward&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">sample_shape</span><span class="o">=</span><span class="p">(</span><span class="n">lnm_deltas_high</span><span class="o">.</span><span class="n">size</span><span class="p">,))</span>
+    <span class="n">lnm_phis_forward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lnm_deltas_high</span><span class="o">/</span><span class="n">ar_lnm_tau</span><span class="p">)</span>
+    <span class="n">lnm_ws_forward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.</span><span class="o">*</span><span class="n">lnm_deltas_high</span><span class="o">/</span><span class="n">ar_lnm_tau</span><span class="p">))</span><span class="o">*</span><span class="n">ar_lnm_std</span><span class="o">*</span><span class="n">lnm_steps_forward</span>
+    <span class="n">final</span><span class="p">,</span><span class="n">ln_f_lnms_high</span> <span class="o">=</span> <span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">build_ar1</span><span class="p">,</span><span class="n">ln_f_lnm_ref</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lnm_phis_forward</span><span class="p">,</span><span class="n">lnm_ws_forward</span><span class="p">])))</span> 
+    <span class="n">ln_f_lnms</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ln_f_lnm_ref</span><span class="p">,</span><span class="n">ln_f_lnms_high</span><span class="p">)</span>
+
+    <span class="c1"># Generate backward steps and prepend to forward steps above following an analogous procedure</span>
+    <span class="n">lnm_steps_backward</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;lnm_steps_backward&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">sample_shape</span><span class="o">=</span><span class="p">(</span><span class="n">lnm_deltas_low</span><span class="o">.</span><span class="n">size</span><span class="p">,))</span>
+    <span class="n">lnm_phis_backward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lnm_deltas_low</span><span class="o">/</span><span class="n">ar_lnm_tau</span><span class="p">)</span>
+    <span class="n">lnm_ws_backward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.</span><span class="o">*</span><span class="n">lnm_deltas_low</span><span class="o">/</span><span class="n">ar_lnm_tau</span><span class="p">))</span><span class="o">*</span><span class="n">ar_lnm_std</span><span class="o">*</span><span class="n">lnm_steps_backward</span>
+    <span class="n">final</span><span class="p">,</span><span class="n">ln_f_lnms_low</span> <span class="o">=</span> <span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">build_ar1</span><span class="p">,</span><span class="n">ln_f_lnm_ref</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lnm_phis_backward</span><span class="p">,</span><span class="n">lnm_ws_backward</span><span class="p">])))</span>
+    <span class="n">ln_f_lnms</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ln_f_lnms_low</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">ln_f_lnms</span><span class="p">)</span>
+
+    <span class="c1"># Exponentiate and save</span>
+    <span class="n">f_lnms</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ln_f_lnms</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;f_lnms&quot;</span><span class="p">,</span><span class="n">f_lnms</span><span class="p">)</span>
+
+    <span class="c1"># Reverse sort our AR process back into an array in which injections and each event&#39;s PE samples are grouped</span>
+    <span class="n">f_lnms_eventSorted</span> <span class="o">=</span> <span class="n">f_lnms</span><span class="p">[</span><span class="n">full_lnm_q_data</span><span class="p">[</span><span class="s1">&#39;lnm_reverseSorting&#39;</span><span class="p">]]</span>
+
+    <span class="c1">#######################################</span>
+    <span class="c1"># Next, build AR1 process in mass ratio</span>
+    <span class="c1">#######################################</span>
+
+    <span class="c1"># Follow the same strategies to construct an AR1 process over mass ratio</span>
+    <span class="c1"># First get the process&#39; standard deviation</span>
+    <span class="n">ar_q_std</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ar_q_std&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;ar_q_std_prior&quot;</span><span class="p">,</span><span class="n">ar_q_std</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="p">(</span><span class="n">ar_q_std</span><span class="o">/</span><span class="mf">1.177</span><span class="p">)</span><span class="o">**</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="c1"># Next the autocorrelation length</span>
+    <span class="n">log_ar_q_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;log_ar_q_tau&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.75</span><span class="p">))</span>
+    <span class="n">ar_q_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;ar_q_tau&quot;</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">log_ar_q_tau</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;q_regularization&quot;</span><span class="p">,</span><span class="o">-</span><span class="p">(</span><span class="n">ar_q_std</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ar_q_tau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="mf">0.5</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Sample an initial rate density at reference point</span>
+    <span class="n">ln_f_q_ref_unscaled</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ln_f_q_ref_unscaled&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">ln_f_q_ref</span> <span class="o">=</span> <span class="n">ln_f_q_ref_unscaled</span><span class="o">*</span><span class="n">ar_q_std</span>
+
+    <span class="c1"># Generate backward steps</span>
+    <span class="n">q_steps_backward</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;q_steps_backward&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">sample_shape</span><span class="o">=</span><span class="p">(</span><span class="n">q_deltas</span><span class="o">.</span><span class="n">size</span><span class="p">,))</span>
+    <span class="n">q_phis_backward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">q_deltas</span><span class="o">/</span><span class="n">ar_q_tau</span><span class="p">)</span>
+    <span class="n">q_ws_backward</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.</span><span class="o">*</span><span class="n">q_deltas</span><span class="o">/</span><span class="n">ar_q_tau</span><span class="p">))</span><span class="o">*</span><span class="n">ar_q_std</span><span class="o">*</span><span class="n">q_steps_backward</span>
+    <span class="n">final</span><span class="p">,</span><span class="n">ln_f_qs_low</span> <span class="o">=</span> <span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">build_ar1</span><span class="p">,</span><span class="n">ln_f_q_ref</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">q_phis_backward</span><span class="p">,</span><span class="n">q_ws_backward</span><span class="p">])))</span>
+    <span class="n">ln_f_qs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ln_f_qs_low</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">ln_f_q_ref</span><span class="p">)</span>
+
+    <span class="c1"># Exponentiate and save</span>
+    <span class="n">f_qs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ln_f_qs</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;f_qs&quot;</span><span class="p">,</span><span class="n">f_qs</span><span class="p">)</span>
+    <span class="n">f_qs_eventSorted</span> <span class="o">=</span> <span class="n">f_qs</span><span class="p">[</span><span class="n">full_lnm_q_data</span><span class="p">[</span><span class="s1">&#39;q_reverseSorting&#39;</span><span class="p">]]</span>
+
+    <span class="c1">####################################################################################</span>
+    <span class="c1"># Sample our baseline hyperparameters for mass ratio, redshift, and component spins</span>
+    <span class="c1">####################################################################################</span>
+
+    <span class="c1"># Sample our hyperparameters</span>
+    <span class="c1"># R20: Differential merger rate (dR/dlnm1) at reference m1 and z values</span>
+    <span class="c1"># mu_chi: Mean of spin magnitude distribution; see Eq. C4</span>
+    <span class="c1"># logsig_chi: Log10 spin magnitude standard deviation; see Eq. C4</span>
+    <span class="c1"># sig_cost: Standard deviation of cosine spin tilts; see Eq. C5</span>
+    <span class="c1"># kappa: Power-law index on redshift evolution of the merger rate; see Eq. C6</span>
+
+    <span class="c1"># Sample the merger rate at our reference mass and redshift values</span>
+    <span class="n">logR20</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;logR20&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+    <span class="n">R20</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;R20&quot;</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">logR20</span><span class="p">)</span>
+
+    <span class="c1"># Sample our baseline hyperparameters for redshift and component spins</span>
+    <span class="n">mu_chi</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;mu_chi&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">1.</span><span class="p">))</span>  
+    <span class="n">kappa</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;kappa&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>  
+    <span class="n">logsig_chi</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;logsig_chi&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span><span class="mf">0.</span><span class="p">))</span> 
+
+    <span class="c1"># Some parameters have posteriors that encounter their prior boundaries.</span>
+    <span class="c1"># In this case it is easier to sample in logit space over the (-inf,inf) interval,</span>
+    <span class="c1"># then transform back to the actual parameter of interest.</span>
+
+    <span class="c1"># First draw a logit quantity from a normal distribution, then override this normal</span>
+    <span class="c1"># prior to impose a uniform prior on the physical parameter of interest</span>
+    <span class="n">logit_sig_cost</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;logit_sig_cost&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">logit_std</span><span class="p">))</span>  <span class="c1"># Standard deviation of cosine spin tilts; Eq. C5</span>
+    <span class="n">sig_cost</span><span class="p">,</span><span class="n">jac_sig_cost</span> <span class="o">=</span> <span class="n">get_value_from_logit</span><span class="p">(</span><span class="n">logit_sig_cost</span><span class="p">,</span><span class="mf">0.3</span><span class="p">,</span><span class="mf">2.</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;sig_cost&quot;</span><span class="p">,</span><span class="n">sig_cost</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;p_sig_cost&quot;</span><span class="p">,</span><span class="n">logit_sig_cost</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">logit_std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">jac_sig_cost</span><span class="p">))</span>
+
+    <span class="c1"># Fixed params: mean of cosine spin tilts; Eq. C5</span>
+    <span class="n">mu_cost</span> <span class="o">=</span> <span class="mf">1.</span>
+
+    <span class="c1"># Compute normalization factors necessary to ensure that `R20` is correctly defined as the</span>
+    <span class="c1"># merger rate at the desired reference mass and redshift values</span>
+    <span class="n">f_z_norm</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="mf">0.2</span><span class="p">)</span><span class="o">**</span><span class="n">kappa</span>
+
+    <span class="c1"># Read out found injections</span>
+    <span class="n">a1_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span>
+    <span class="n">a2_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span>
+    <span class="n">cost1_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;cost1&#39;</span><span class="p">]</span>
+    <span class="n">cost2_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;cost2&#39;</span><span class="p">]</span>
+    <span class="n">m1_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;m1&#39;</span><span class="p">]</span>
+    <span class="n">m2_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;m2&#39;</span><span class="p">]</span>
+    <span class="n">z_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span>
+    <span class="n">dVdz_det</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;dVdz&#39;</span><span class="p">]</span>
+    <span class="n">p_draw</span> <span class="o">=</span> <span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;p_draw_m1m2z&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;p_draw_a1a2cost1cost2&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Compute proposed population weights</span>
+    <span class="c1"># Note that injection draw weights are defined as dP/dm1*dm2, rather than dP/dlnm1*dq (as we are using here)</span>
+    <span class="c1"># This requires an additional factor of 1/m1 on both f_m1_det and f_m2_det below</span>
+    <span class="n">f_m1_det</span> <span class="o">=</span> <span class="n">f_lnms_eventSorted</span><span class="p">[</span><span class="n">full_lnm_q_data</span><span class="p">[</span><span class="s1">&#39;m1_injections_from_allSamples&#39;</span><span class="p">]]</span><span class="o">/</span><span class="n">m1_det</span>
+    <span class="n">f_m2_det</span> <span class="o">=</span> <span class="n">f_lnms_eventSorted</span><span class="p">[</span><span class="n">full_lnm_q_data</span><span class="p">[</span><span class="s1">&#39;m2_injections_from_allSamples&#39;</span><span class="p">]]</span><span class="o">/</span><span class="n">m2_det</span>
+    <span class="n">f_q_det</span> <span class="o">=</span> <span class="n">f_qs_eventSorted</span><span class="p">[</span><span class="n">full_lnm_q_data</span><span class="p">[</span><span class="s1">&#39;q_injections_from_allSamples&#39;</span><span class="p">]]</span>
+    <span class="n">f_z_det</span> <span class="o">=</span> <span class="n">dVdz_det</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="n">z_det</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">kappa</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span><span class="o">/</span><span class="n">f_z_norm</span>
+    <span class="n">p_a1_det</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">a1_det</span><span class="p">,</span><span class="n">mu_chi</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">logsig_chi</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">p_a2_det</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">a2_det</span><span class="p">,</span><span class="n">mu_chi</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">logsig_chi</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">p_cost1_det</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">cost1_det</span><span class="p">,</span><span class="n">mu_cost</span><span class="p">,</span><span class="n">sig_cost</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">p_cost2_det</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">cost2_det</span><span class="p">,</span><span class="n">mu_cost</span><span class="p">,</span><span class="n">sig_cost</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># All together, the quantity below is the detection rate dN/dm1*dm2*da1*da2*dcost1*dcost2*dz*dt_det</span>
+    <span class="n">R_pop_det</span> <span class="o">=</span> <span class="n">R20</span><span class="o">*</span><span class="n">f_m1_det</span><span class="o">*</span><span class="n">f_m2_det</span><span class="o">*</span><span class="n">f_q_det</span><span class="o">*</span><span class="n">f_z_det</span><span class="o">*</span><span class="n">p_a1_det</span><span class="o">*</span><span class="n">p_a2_det</span><span class="o">*</span><span class="n">p_cost1_det</span><span class="o">*</span><span class="n">p_cost2_det</span>
+
+    <span class="c1"># Form ratio of proposed weights over draw weights</span>
+    <span class="c1"># The division by 2 corresponds to the fact that injections are uniformly placed over the 2 year observation period</span>
+    <span class="n">inj_weights</span> <span class="o">=</span> <span class="n">R_pop_det</span><span class="o">/</span><span class="p">(</span><span class="n">p_draw</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+    
+    <span class="c1"># As a fit diagnostic, compute effective number of injections</span>
+    <span class="n">nEff_inj</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">inj_weights</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">inj_weights</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">nObs</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;nEff_inj_per_event&quot;</span><span class="p">,</span><span class="n">nEff_inj</span><span class="o">/</span><span class="n">nObs</span><span class="p">)</span>
+
+    <span class="c1"># Compute net detection efficiency and add to log-likelihood</span>
+    <span class="n">Nexp</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">inj_weights</span><span class="p">)</span><span class="o">/</span><span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;nTrials&#39;</span><span class="p">]</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span><span class="o">-</span><span class="n">Nexp</span><span class="p">)</span>
+
+    <span class="c1"># This function defines the per-event log-likelihood. It expects the following arguments:</span>
+    <span class="c1"># m1_sample, z_sample...: Arrays of posterior samples for the given event</span>
+    <span class="c1"># priors: Corresponding array of prior probabilities assigned to each sample</span>
+    <span class="c1"># ar_indices: Indices used to retrieve the correct AR1 rates corresponding to this event&#39;s samples</span>
+    <span class="k">def</span> <span class="nf">logp</span><span class="p">(</span><span class="n">m1_sample</span><span class="p">,</span><span class="n">m2_sample</span><span class="p">,</span><span class="n">z_sample</span><span class="p">,</span><span class="n">dVdz_sample</span><span class="p">,</span><span class="n">a1_sample</span><span class="p">,</span><span class="n">a2_sample</span><span class="p">,</span><span class="n">cost1_sample</span><span class="p">,</span><span class="n">cost2_sample</span><span class="p">,</span><span class="n">priors</span><span class="p">,</span><span class="n">m1_ar_indices</span><span class="p">,</span><span class="n">m2_ar_indices</span><span class="p">,</span><span class="n">q_ar_indices</span><span class="p">):</span>
+
+        <span class="c1"># Compute proposed population weights</span>
+        <span class="c1"># Use `ar_indices` to extract the correct values of `f_lnm1s_eventSorted` and `f_qs_eventSorted`</span>
+        <span class="c1"># correspond to each of this event&#39;s posterior samples</span>
+        <span class="n">f_m1</span> <span class="o">=</span> <span class="n">f_lnms_eventSorted</span><span class="p">[</span><span class="n">m1_ar_indices</span><span class="p">]</span><span class="o">/</span><span class="n">m1_sample</span>
+        <span class="n">f_m2</span> <span class="o">=</span> <span class="n">f_lnms_eventSorted</span><span class="p">[</span><span class="n">m2_ar_indices</span><span class="p">]</span><span class="o">/</span><span class="n">m2_sample</span>
+        <span class="n">f_q</span> <span class="o">=</span> <span class="n">f_qs_eventSorted</span><span class="p">[</span><span class="n">q_ar_indices</span><span class="p">]</span>
+        <span class="n">f_z</span> <span class="o">=</span> <span class="n">dVdz_sample</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="n">z_sample</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">kappa</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span><span class="o">/</span><span class="n">f_z_norm</span>
+        <span class="n">p_a1</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">a1_sample</span><span class="p">,</span><span class="n">mu_chi</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">logsig_chi</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">p_a2</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">a2_sample</span><span class="p">,</span><span class="n">mu_chi</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">logsig_chi</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">p_cost1</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">cost1_sample</span><span class="p">,</span><span class="n">mu_cost</span><span class="p">,</span><span class="n">sig_cost</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">p_cost2</span> <span class="o">=</span> <span class="n">truncatedNormal</span><span class="p">(</span><span class="n">cost2_sample</span><span class="p">,</span><span class="n">mu_cost</span><span class="p">,</span><span class="n">sig_cost</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">R_pop</span> <span class="o">=</span> <span class="n">R20</span><span class="o">*</span><span class="n">f_m1</span><span class="o">*</span><span class="n">f_m2</span><span class="o">*</span><span class="n">f_q</span><span class="o">*</span><span class="n">f_z</span><span class="o">*</span><span class="n">p_a1</span><span class="o">*</span><span class="n">p_a2</span><span class="o">*</span><span class="n">p_cost1</span><span class="o">*</span><span class="n">p_cost2</span>
+
+        <span class="c1"># Form ratio of proposed population weights to PE priors</span>
+        <span class="n">mc_weights</span> <span class="o">=</span> <span class="n">R_pop</span><span class="o">/</span><span class="n">priors</span>
+
+        <span class="c1"># Compute effective number of samples and return log-likelihood</span>
+        <span class="n">n_eff</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mc_weights</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mc_weights</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>     
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mc_weights</span><span class="p">)),</span><span class="n">n_eff</span>
+    
+    <span class="c1"># Map the log-likelihood function over each event in our catalog</span>
+    <span class="n">log_ps</span><span class="p">,</span><span class="n">n_effs</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">logp</span><span class="p">)(</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;m1&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;m2&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;dVc_dz&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;cost1&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;cost2&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;z_prior&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;m1_ar_indices&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;m2_ar_indices&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]),</span>
+                        <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;q_ar_indices&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]))</span>
+        
+    <span class="c1"># As a diagnostic, save minimum number of effective samples across all events</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s1">&#39;min_log_neff&#39;</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">n_effs</span><span class="p">)))</span>
+
+    <span class="c1"># Tally log-likelihoods across our catalog</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;logp&quot;</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_ps</span><span class="p">))</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Tom Callister &amp; Will Farr.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

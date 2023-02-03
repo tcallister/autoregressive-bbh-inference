@@ -24,7 +24,7 @@ import sphinx_rtd_theme
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx_rtd_theme','sphinx.ext.autosectionlabel', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.githubpages','sphinx.ext.napoleon','sphinx.ext.viewcode']
+extensions = ['numpydoc','sphinx_rtd_theme','sphinx.ext.autosectionlabel', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.githubpages','sphinx.ext.napoleon','sphinx.ext.viewcode']
 templates_path = ['templates']
 exclude_patterns = ['build', 'Thumbs.db', '.DS_Store']
 
