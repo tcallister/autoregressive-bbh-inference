@@ -14,7 +14,7 @@ To rerun our autoregressive inference on the primary mass and mass ratio distrib
     $ cd code/
     $ python run_ar_lnm1_q.py
 
-This script will launch `numpyro`, using the likelihood model :meth:`autoregressive-mass-models.ar_lnm1_q` defined in `code/autoregressive-mass-models.py`.
+This script will launch `numpyro`, using the likelihood model :meth:`autoregressive_mass_models.ar_lnm1_q` defined in `code/autoregressive-mass-models.py`.
 This may take several hours to complete.
 The output will be two files:
 
