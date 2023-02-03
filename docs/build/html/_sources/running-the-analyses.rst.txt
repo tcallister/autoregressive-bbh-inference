@@ -161,7 +161,7 @@ To rerun our autoregressive inference on the BBH effective spin distribution, do
     $ cd code/
     $ python run_ar_Xeff_Xp.py
 
-This script will launch `numpyro`, using the likelihood model :meth:`autoregressive_spin_models.ar_spinMagTilt`.
+This script will launch `numpyro`, using the likelihood model :meth:`autoregressive_spin_models.ar_Xeff_Xp`.
 This may take several hours to complete.
 The output will be two files:
 
