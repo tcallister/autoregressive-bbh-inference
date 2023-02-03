@@ -1,6 +1,7 @@
 import numpyro
 import jax.numpy as jnp
 from jax.scipy.special import erf
+import scipy
 import numpy as np
 
 logit_std = 2.5
@@ -140,6 +141,41 @@ def build_ar1(total,new_element):
     c,w = new_element
     total = c*total+w
     return total,total
+
+def truncated_gaussian(xs,mu,sigma,low_cutoff,high_cutoff):
+
+    """
+    Function defining the probability density due to a truncated Gaussian
+
+    Parameters
+    ----------
+    xs : np.array
+        Array of values at which to evaluate probability density
+    mu : float
+        Mean parameter of truncated normal
+    sigma : float
+        Standard deviation parameter of truncated normal
+    low_cutoff : float
+        Lower cutoff
+    high_cutoff : float
+        Upper cutoff
+
+    Returns
+    -------
+    ys : np.array
+        Corresponding probability densities
+    """
+    
+    # Normalization
+    a = (low_cutoff-mu)/np.sqrt(2*sigma**2)
+    b = (high_cutoff-mu)/np.sqrt(2*sigma**2)
+    norm = np.sqrt(sigma**2*np.pi/2)*(-scipy.special.erf(a) + scipy.special.erf(b))
+
+    ys = np.exp(-(xs-mu)**2/(2.*sigma**2))/norm
+    ys[xs<low_cutoff] = 0
+    ys[xs>high_cutoff] = 0
+
+    return ys
 
 def calculate_gaussian_2D(chiEff, chiP, mu_eff, sigma2_eff, mu_p, sigma2_p, cov, chi_min=-1):
 

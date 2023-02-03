@@ -12,8 +12,6 @@ np.random.seed(1207)
 from autoregressive_mass_models import ar_lnm1_q
 from getData import *
 
-# Run over several chains to check convergence
-
 # Get dictionaries holding injections and posterior samples
 injectionDict = getInjections(reweight=False)
 sampleDict = getSamples(sample_limit=2000,reweight=True,weighting_function=reweighting_function_arlnm1_q)
