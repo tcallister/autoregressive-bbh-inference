@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; autoregressive-bbh-inference  documentation</title>
+  <title>Figure generation &mdash; autoregressive-bbh-inference  documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -17,8 +18,9 @@
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="#" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Getting started" href="getting-started.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -36,9 +38,9 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="making-figures.html">Figure generation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Figure generation</a></li>
 </ul>
 
         </div>
@@ -55,8 +57,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a></li>
-      <li class="breadcrumb-item active">Index</li>
+      <li class="breadcrumb-item active">Figure generation</li>
       <li class="wy-breadcrumbs-aside">
+            <a href="_sources/making-figures.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -64,17 +67,27 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-
-<h1 id="index">Index</h1>
-
-<div class="genindex-jumpbox">
- 
+  <section id="figure-generation">
+<h1>Figure generation<a class="headerlink" href="#figure-generation" title="Permalink to this heading"></a></h1>
+<p>The <code class="code docutils literal notranslate"><span class="pre">figures/</span></code> directory contains jupyter notebooks that reproduce every figure appearing in our paper.
+To regenerate any particular figure, first make sure you have locally downloaded data from Zenodo (or regenerated it yourself!).
+See <a class="reference internal" href="getting-started.html#getting-started"><span class="std std-ref">Getting started</span></a> for more info about this.</p>
+<p>Once you’ve downloaded the necessary data, launch a jupyter session:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>conda<span class="w"> </span>activate<span class="w"> </span>autoregressive-bbh-inference
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>figures/
+$<span class="w"> </span>jupyter<span class="w"> </span>notebook
+</pre></div>
 </div>
+<p>Then open the desired notebook from the list of .ipynb files and run all cells (<em>“Run All”</em> in the “Cell” menu).
+The notebook will generate and save the corresponding figure in .pdf format in the <code class="code docutils literal notranslate"><span class="pre">figures/</span></code> directory.</p>
+</section>
 
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="getting-started.html" class="btn btn-neutral float-left" title="Getting started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
 
   <hr/>
 
