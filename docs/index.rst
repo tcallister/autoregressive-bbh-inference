@@ -33,5 +33,7 @@ Contents:
 .. toctree::
     :maxdepth: 1
 
+    getting-started
+
 * :ref:`modindex`
 * :ref:`search`
