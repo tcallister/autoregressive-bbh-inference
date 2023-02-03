@@ -82,7 +82,7 @@ $<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>code/
 $<span class="w"> </span>python<span class="w"> </span>run_ar_lnm1_q.py
 </pre></div>
 </div>
-<p>This script will launch <cite>numpyro</cite>, using the likelihood model <a class="reference internal" href="autoregressive_mass_models.html#autoregressive_mass_models.ar_lnm1_q" title="autoregressive_mass_models.ar_lnm1_q"><code class="xref py py-meth docutils literal notranslate"><span class="pre">autoregressive_mass_models.ar_lnm1_q()</span></code></a> defined in <cite>code/autoregressive-mass-models.py</cite>.
+<p>This script will launch <cite>numpyro</cite>, using the likelihood model <a class="reference internal" href="autoregressive_mass_models.html#autoregressive_mass_models.ar_lnm1_q" title="autoregressive_mass_models.ar_lnm1_q"><code class="xref py py-meth docutils literal notranslate"><span class="pre">autoregressive_mass_models.ar_lnm1_q()</span></code></a>.
 This may take several hours to complete.
 The output will be two files:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>final-ar_lnm1_q.cdf
@@ -94,6 +94,24 @@ final-ar_lnm1_q_data.npy
 <p>Before running, open <cite>run_ar_lnm1_q.py</cite> and change the output filepaths to suitable locations!
 These output files will, by default, be written to a directory that likely does not exist on your system.</p>
 <p>Also, be aware that <cite>file-ar_lnm1_q.cdf</cite> is <em>large</em>, running a little over 20 GB.</p>
+</div>
+<p>The file <code class="code docutils literal notranslate"><span class="pre">final-ar_lnm1_q_data.npy</span></code> contains arrays holding all the mass and mass ratios in our dataset (including posterior samples and injections);
+these are the values over which our AR processes are defined.
+This file also contains information used to sort or reverse sort these values, used inside the likelihood function.
+The file <code class="code docutils literal notranslate"><span class="pre">final-ar_lnm1_q.cdf</span></code>, in turn, contains the full inference output, including posterior samples and inference diagnostics.</p>
+<p>Finally, we distill the full inference output into the restricted set of data that will be used for downstream analyses and figure generation.
+This is done via</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>../data/
+$<span class="w"> </span>python<span class="w"> </span>process_lnm1_q.py
+</pre></div>
+</div>
+<p>This script will load the two files above and create a single (much smaller!) output file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ar_lnm1_q_summary.hdf
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A notebook that demonstrates how to load in, inspect, and manipulate this output file can be found <a class="reference external" href="https://github.com/tcallister/autoregressive-bbh-inference/blob/main/data/inspect_ar_lnm1_q_results.ipynb">here</a></p>
 </div>
 </section>
 </section>
