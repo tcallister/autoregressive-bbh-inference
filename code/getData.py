@@ -98,7 +98,7 @@ def getInjections(sample_limit=10000,reweight=False,weighting_function=reweighti
     """
 
     # Load injections
-    injectionFile = os.path.join(dirname,"injectionDict_FAR_1_in_1.pickle")
+    injectionFile = os.path.join(dirname,"./../input/injectionDict_FAR_1_in_1.pickle")
     injectionDict = np.load(injectionFile,allow_pickle=True)
 
     # Convert all lists to numpy arrays
@@ -169,7 +169,7 @@ def getSamples(sample_limit=2000,bbh_only=True,reweight=False,weighting_function
     """
 
     # Load dictionary with preprocessed posterior samples
-    sampleFile = os.path.join(dirname,"sampleDict_FAR_1_in_1_yr.pickle")
+    sampleFile = os.path.join(dirname,"./../input/sampleDict_FAR_1_in_1_yr.pickle")
     sampleDict = np.load(sampleFile,allow_pickle=True)
 
     # Remove non-BBH events, if desired
