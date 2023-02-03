@@ -35,6 +35,7 @@ Contents:
 
     getting-started
     making-figures
+    running-the-analyses
 
 * :ref:`modindex`
 * :ref:`search`
