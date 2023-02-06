@@ -41,9 +41,3 @@ This script will populate the :code:`data/` directory with datafiles containing 
 These output files can be inspected by running the jupyter notebooks also appearing in the :code:`data/` directory.
 The script will also place several files in the :code:`input/` directory, which are needed to rerun analyses and/or regenerate figures.
 
-The data downloaded via the above script is not the raw output of our inference, but has been post-processed and coarse-grained in order to minimize storage/memory requirements.
-If you want access to the actual, underlying data, this can be found at the following set of Zenodo pages:
-* XXXXX
-* XXXXX
-*Caution*: The datafiles hosted on these pages are pretty large (tens of GBs), so we recommend against downloading these unless you really need to!
-

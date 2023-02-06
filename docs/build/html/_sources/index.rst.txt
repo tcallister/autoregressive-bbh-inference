@@ -27,6 +27,9 @@ The result is well-described by a superposition between a broken power law and t
 .. image:: images/figure_06_cropped.pdf
     :height: 250
 
+The datasets comprising our results, as well as the input data necessary to reproduce our work, are hosted on Zenodo:
+
+https://doi.org/10.5281/zenodo.7600141
 
 Contents:
 
