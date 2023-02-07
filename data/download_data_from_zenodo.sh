@@ -2,7 +2,7 @@
 
 # Download and unzip
 curl https://zenodo.org/record/7600141/files/autoregressive-bbh-inference-data.zip --output "autoregressive-bbh-inference-data.zip"
-unzip autogregressive-bbh-inference-data.zip
+unzip autoregressive-bbh-inference-data.zip
 
 # Move input data to ../code/input/
 mv sampleDict_FAR_1_in_1_yr.pickle ../input/
@@ -11,5 +11,5 @@ mv posteriors_gaussian_spin_samples_FAR_1_in_1.json ../input/
 mv o1o2o3_mass_c_iid_mag_iid_tilt_powerlaw_redshift_result.json ../input/
 
 # Remove original zip files and annoying Mac OSX files
-rm autogregressive-bbh-inference-data.zip
+rm autoregressive-bbh-inference-data.zip
 rmdir __MACOSX/

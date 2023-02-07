@@ -6,7 +6,7 @@ sys.path.append('./../code/')
 from utilities import *
 
 # Load inference results
-inference_data = az.from_netcdf("/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_z.cdf")
+inference_data = az.from_netcdf("/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_z_0203.cdf")
 samps = az.extract(inference_data,var_names=["R20","f_zs","ar_z_std","ar_z_tau",\
                 "alpha","mu_m1","sig_m1","log_f_peak","mMin","mMax","log_dmMin","log_dmMax","bq",\
                 "mu_chi","logsig_chi","sig_cost","nEff_inj_per_event","min_log_neff"])
@@ -30,7 +30,7 @@ nEff_inj_per_event = samps.nEff_inj_per_event.values
 min_log_neff = samps.min_log_neff.values
 
 # Also extract complete set of redshift values over which AR process is defined
-z_data = np.load('/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_z_data.npy',allow_pickle=True)[()]
+z_data = np.load('/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_z_data_0203.npy',allow_pickle=True)[()]
 z_values = z_data['z_allSamples']
 
 # For ease of plotting and storage, coarse-grain by a factor of 50
