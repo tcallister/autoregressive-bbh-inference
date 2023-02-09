@@ -1,0 +1,8 @@
+\newcommand{\MassFitSigmoidZCenter}{0.64}
+\newcommand{\MassFitSigmoidDeltaZ}{0.06}
+\newcommand{\MassFitSigmoidRateLow}{19.2}
+\newcommand{\MassFitSigmoidDeltaRate}{31.5}
+\newcommand{\MassFitBplZBreak}{0.45}
+\newcommand{\MassFitBplKappaLow}{0.0}
+\newcommand{\MassFitBplKappaHigh}{4.5}
+\newcommand{\MassFitBplRateBreak}{19.5}

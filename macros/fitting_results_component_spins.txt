@@ -1,0 +1,7 @@
+\newcommand{\MagFitGaussianMean}{0.00}
+\newcommand{\MagFitGaussianStd}{0.32}
+\newcommand{\MagFitLorentzianMean}{0.09}
+\newcommand{\MagFitLorentzianGamma}{0.24}
+\newcommand{\CosTiltFitFractionIso}{0.61}
+\newcommand{\CosTiltFitMean}{0.56}
+\newcommand{\CosTiltFitStd}{0.63}

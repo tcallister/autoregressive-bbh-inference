@@ -1,0 +1,1 @@
+\newcommand{\TiltSignificancePercentagePeak}{40\%}

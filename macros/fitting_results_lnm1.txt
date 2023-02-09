@@ -1,0 +1,13 @@
+\newcommand{\MassFitR}{7.86}
+\newcommand{\MassFitFpeakOne}{0.47}
+\newcommand{\MassFitFpeakTwo}{0.17}
+\newcommand{\MassFitMuOne}{10.0}
+\newcommand{\MassFitSigOne}{1.1}
+\newcommand{\MassFitMuTwo}{33.9}
+\newcommand{\MassFitSigTwo}{4.2}
+\newcommand{\MassFitSlopeOne}{-1.7}
+\newcommand{\MassFitSlopeTwo}{-3.4}
+\newcommand{\MassFitMbreak}{43.5}
+\newcommand{\MassFitMmin}{10.3}
+\newcommand{\MassFitMmax}{100}
+\newcommand{\MassFitDeltaMmin}{0.5}

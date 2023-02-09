@@ -1,0 +1,2 @@
+\newcommand{\RedshiftSignificancePercentageLowRise}{43\%}
+\newcommand{\RedshiftSignificancePercentageHighRise}{95\%}

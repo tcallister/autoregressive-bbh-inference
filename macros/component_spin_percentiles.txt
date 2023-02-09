@@ -1,0 +1,6 @@
+\newcommand{\SpinMagnitudeFifty}{0.22^{+0.09}_{-0.07}}
+\newcommand{\SpinMagnitudeNinetyFive}{0.79^{+0.11}_{-0.18}}
+\newcommand{\SpinTiltFifty}{0.17^{+0.20}_{-0.18}}
+\newcommand{\SpinTiltMedianPercentPositive}{94\%}
+\newcommand{\SpinTiltPercentNegative}{40^{+10}_{-13}\%}
+\newcommand{\SpinTiltRateOneOrBothNegative}{16.7^{+9.8}_{-6.5}}
