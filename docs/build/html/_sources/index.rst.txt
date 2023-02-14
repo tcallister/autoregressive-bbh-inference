@@ -58,6 +58,7 @@ Contents:
     getting-started
     making-figures
     running-the-analyses
+    modules
 
-* :ref:`modindex`
-* :ref:`search`
+.. * :ref:`modindex`
+    * :ref:`search`
