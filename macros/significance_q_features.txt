@@ -1,0 +1,2 @@
+\newcommand{\MassRatioSignifanceRising}{90\%}
+\newcommand{\MassRatioBetaPositive}{92\%}
