@@ -27,6 +27,24 @@ The result is well-described by a superposition between a broken power law and t
 .. image:: images/figure_06_cropped.pdf
     :height: 250
 
+The BBH merger rate was higher in the past than it is today, although this growth occurs in a way that may not necessarily be well-described by a power law in :math:`1+z`.
+
+**Black hole component spins**
+
+.. image:: images/figure_08_cropped.pdf
+    :height: 250
+
+Black holes exhibit a unimodal distribution of spin magnitudes, concentrated at low values but with no special features at :math:`\chi=0`.
+They also show a broad range of spin-orbit misalignment angles (including tilt angles beyond :math:`90^\circ`), although an isotropic distribution is also disfavored.
+
+**Binary black hole effective spins**
+
+.. image:: images/figure_12_cropped.pdf
+    :height: 250
+
+Similarly, the distribution of effective inspiral spins among merging binaries is unimodal, encompasses negative :math:`\chi_\mathrm{eff}` values, but also disfavors symmetry about zero.
+Effective precessing spins are poorly measured, but favor a broad distribution in :math:`\chi_\mathrm{p}`.
+
 The datasets comprising our results, as well as the input data necessary to reproduce our work, are hosted on Zenodo:
 
 https://doi.org/10.5281/zenodo.7600141
