@@ -1,7 +1,7 @@
 Running the analyses
 ====================
 
-Here, we detail how to rerun our code to recreate the data stored at https://zenodo.org/record/7600141.
+Here, we detail how to rerun our code to recreate the data stored at https://zenodo.org/record/7600140.
 
 Autoregressive mass and mass ratio inference
 --------------------------------------------

@@ -29,7 +29,7 @@ Downloading input files and inference results
 ---------------------------------------------
 
 Datafiles containing the output of our inference codes are hosted on a few different Zenodo pages.
-All data needed to regenerate figures and/or rerun our analyses can be found at https://doi.org/10.5281/zenodo.7600141.
+All data needed to regenerate figures and/or rerun our analyses can be found at https://doi.org/10.5281/zenodo.7600140.
 To download this input/output data locally, you can do the following:
 
 .. code-block:: bash

@@ -10,6 +10,10 @@ This page details the code used to produce the results presented in *A parameter
 
 https://github.com/tcallister/autoregressive-bbh-inference/
 
+The datasets comprising our results, as well as the input data necessary to reproduce our work, are hosted on Zenodo:
+
+https://doi.org/10.5281/zenodo.7600140
+
 In this paper, we modeled the distributions of binary black hole masses, spins, and redshifts using flexible *autoregressive processes*,
 seeking to robustly identify the set of physical features appearing in these distributions without the need for strongly-parametrized population models.
 Using the GWTC-3 catalog of LIGO/Virgo compact binary detections, we see the following:
@@ -45,9 +49,6 @@ They also show a broad range of spin-orbit misalignment angles (including tilt a
 Similarly, the distribution of effective inspiral spins among merging binaries is unimodal, encompasses negative :math:`\chi_\mathrm{eff}` values, but also disfavors symmetry about zero.
 Effective precessing spins are poorly measured, but favor a broad distribution in :math:`\chi_\mathrm{p}`.
 
-The datasets comprising our results, as well as the input data necessary to reproduce our work, are hosted on Zenodo:
-
-https://doi.org/10.5281/zenodo.7600141
 
 Contents:
 
