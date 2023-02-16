@@ -2,7 +2,7 @@
 
 # autoregressive-bbh-inference
 
-This repository holds code and data release products behind the paper "**A parameter-free tour of the binary black hole population**" (**[arXiv:2302.XXXXX](https://arxiv.org/abs/2302.XXXXX)**)
+This repository holds code and data release products behind the paper "**A parameter-free tour of the binary black hole population**" (**[arXiv:2302.07289](https://arxiv.org/abs/2302.2302.07289)**)
 
 For documentation and instructions for reproducing our results, see
 **https://tcallister.github.io/autoregressive-bbh-inference/**
