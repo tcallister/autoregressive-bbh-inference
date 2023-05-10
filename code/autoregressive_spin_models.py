@@ -303,17 +303,19 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data):
     # We will sample from a half normal distribution, but override this with a quadratic prior
     # on the processes' standard deviation; see Eq. B1
     ar_Xeff_std = numpyro.sample("ar_Xeff_std",dist.HalfNormal(1.))
-    numpyro.factor("ar_Xeff_std_prior",ar_Xeff_std**2/2. - (ar_Xeff_std/1.75)**4/8.75)
+    #numpyro.factor("ar_Xeff_std_prior",ar_Xeff_std**2/2. - (ar_Xeff_std/1.75)**4/8.75)
+    numpyro.factor("ar_Xeff_std_prior",ar_Xeff_std**2/2. - (ar_Xeff_std/1.)**4/8.75)
 
     # Next the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
     logit_ar_Xeff_tau = numpyro.sample("logit_ar_Xeff_tau",dist.Normal(0,logit_std))
-    ar_Xeff_tau,jac_ar_Xeff_tau = get_value_from_logit(logit_ar_Xeff_tau,0.2,2.)
+    #ar_Xeff_tau,jac_ar_Xeff_tau = get_value_from_logit(logit_ar_Xeff_tau,0.2,2.)
+    ar_Xeff_tau,jac_ar_Xeff_tau = get_value_from_logit(logit_ar_Xeff_tau,0.3,2.)
     numpyro.factor("p_ar_Xeff_tau",logit_ar_Xeff_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_Xeff_tau))
     numpyro.deterministic("ar_Xeff_tau",ar_Xeff_tau)
 
     # As discussed in Appendix B, we need a regularizing log-likelihood factor to help stabilize our inference; see Eq. B3
-    numpyro.factor("Xeff_regularization",-(ar_Xeff_std/jnp.sqrt(ar_Xeff_tau))**2/(2.*0.4**2))
+    #numpyro.factor("Xeff_regularization",-(ar_Xeff_std/jnp.sqrt(ar_Xeff_tau))**2/(2.*0.4**2))
 
     # Sample an initial rate density at reference point
     ln_f_Xeff_ref_unscaled = numpyro.sample("ln_f_Xeff_ref_unscaled",dist.Normal(0,1))
@@ -341,6 +343,10 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data):
     # Reverse sort our AR process back into an array in which injections and each event's PE samples are grouped
     f_Xeff_eventSorted = f_Xeffs[full_chi_data['Xeff_reverseSorting']]
 
+    p_Xeffs = f_Xeffs/jnp.trapz(f_Xeffs,all_Xeff_samples)
+    entropy = -10.*jnp.trapz(p_Xeffs*jnp.log(p_Xeffs),all_Xeff_samples)
+    numpyro.factor("Xeff_entropy",entropy)
+
     #############################
     # Construct AR1 process in Xp
     #############################
@@ -348,15 +354,16 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data):
     # Follow the same strategies to construct an AR1 process over Xp
     # First get the process' standard deviation
     ar_Xp_std = numpyro.sample("ar_Xp_std",dist.HalfNormal(1.))
-    numpyro.factor("ar_Xp_std_prior",ar_Xp_std**2/2. - (ar_Xp_std/1.75)**4/8.75)
+    #numpyro.factor("ar_Xp_std_prior",ar_Xp_std**2/2. - (ar_Xp_std/1.75)**4/8.75)
+    numpyro.factor("ar_Xp_std_prior",ar_Xp_std**2/2. - (ar_Xp_std/1.)**4/8.75)
 
     # Next the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
     logit_ar_Xp_tau = numpyro.sample("logit_ar_Xp_tau",dist.Normal(0,logit_std))
-    ar_Xp_tau,jac_ar_Xp_tau = get_value_from_logit(logit_ar_Xp_tau,0.2,2.)
+    ar_Xp_tau,jac_ar_Xp_tau = get_value_from_logit(logit_ar_Xp_tau,0.3,2.)
     numpyro.factor("p_ar_Xp_tau",logit_ar_Xp_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_Xp_tau))
     numpyro.deterministic("ar_Xp_tau",ar_Xp_tau)
-    numpyro.factor("Xp_regularization",-(ar_Xp_std/jnp.sqrt(ar_Xp_tau))**2/(2.*0.4**2))
+    #numpyro.factor("Xp_regularization",-(ar_Xp_std/jnp.sqrt(ar_Xp_tau))**2/(2.*0.4**2))
 
     # Sample an initial rate density at reference point
     ln_f_Xp_ref_unscaled = numpyro.sample("ln_f_Xp_ref_unscaled",dist.Normal(0,1))
@@ -380,6 +387,10 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data):
     f_Xps = jnp.exp(ln_f_Xps)
     numpyro.deterministic("f_Xps",f_Xps)
     f_Xp_eventSorted = f_Xps[full_chi_data['Xp_reverseSorting']]
+
+    p_Xps = f_Xps/jnp.trapz(f_Xps,all_Xp_samples)
+    entropy = -10.*jnp.trapz(p_Xps*jnp.log(p_Xps),all_Xp_samples)
+    numpyro.factor("Xp_entropy",entropy)
 
     ##############################
     # Remaining degrees of freedom

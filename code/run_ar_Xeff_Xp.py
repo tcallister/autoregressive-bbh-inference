@@ -1,5 +1,5 @@
 import numpyro
-nChains = 3
+nChains = 1#3
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC,init_to_value
 from jax import random
@@ -15,8 +15,8 @@ from getData import *
 # Run over several chains to check convergence
 
 # Get dictionaries holding injections and posterior samples
-injectionDict = getInjections(reweight=False,spin='effective')
-sampleDict = getSamples(sample_limit=2500,reweight=False,spin='effective')
+injectionDict = getInjections(reweight=False)
+sampleDict = getSamples(sample_limit=2500,reweight=False)
 
 # Instantiate array to hold all combined primary mass samples
 total_Xeff_Samples = 0
@@ -84,7 +84,8 @@ init_values = {
             }
 """
 kernel = NUTS(ar_Xeff_Xp)#,init_strategy=init_to_value(values=init_values),dense_mass=[("ar_z_std","log_ar_z_tau"),("ar_q_std","log_ar_q_tau")])
-mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
+#mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=500,num_samples=500,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(202)
@@ -94,8 +95,8 @@ mcmc.print_summary()
 
 # Save out data
 data = az.from_numpyro(mcmc)
-az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_Xeff_Xp.cdf")
-np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_Xeff_Xp_data.npy',full_Xeff_Xp_data)
-#az.to_netcdf(data,"../data/ar_Xeff_Xp.cdf")
-#np.save('../data/ar_Xeff_Xp_data.npy',full_Xeff_Xp_data)
+#az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_Xeff_Xp.cdf")
+#np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_Xeff_Xp_data.npy',full_Xeff_Xp_data)
+az.to_netcdf(data,"../data/ar_Xeff_Xp_entropy.cdf")
+np.save('../data/ar_Xeff_Xp_data_entropy.npy',full_Xeff_Xp_data)
 
