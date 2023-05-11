@@ -45,17 +45,18 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     # We will sample from a half normal distribution, but override this with a quadratic prior
     # on the processes' standard deviation; see Eq. B1
     ar_chi_std = numpyro.sample("ar_chi_std",dist.HalfNormal(1.))
+    #numpyro.factor("ar_chi_std_prior",ar_chi_std**2/2. - (ar_chi_std/0.75)**4/8.75)
     numpyro.factor("ar_chi_std_prior",ar_chi_std**2/2. - (ar_chi_std/0.75)**4/8.75)
 
     # Next the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in logit space
     logit_ar_chi_tau = numpyro.sample("logit_ar_chi_tau",dist.Normal(0,logit_std))
-    ar_chi_tau,jac_ar_chi_tau = get_value_from_logit(logit_ar_chi_tau,0.2,2.)
+    ar_chi_tau,jac_ar_chi_tau = get_value_from_logit(logit_ar_chi_tau,0.3,2.)
     numpyro.factor("p_ar_chi_tau",logit_ar_chi_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_chi_tau))
     numpyro.deterministic("ar_chi_tau",ar_chi_tau)
 
     # As discussed in Appendix B, we need a regularizing log-likelihood factor to help stabilize our inference; see Eq. B3
-    numpyro.factor("chi_regularization",-(ar_chi_std/jnp.sqrt(ar_chi_tau))**2/(2.*0.4**2))
+    #numpyro.factor("chi_regularization",-(ar_chi_std/jnp.sqrt(ar_chi_tau))**2/(2.*0.4**2))
 
     # Sample an initial rate density at reference point
     ln_f_chi_ref_unscaled = numpyro.sample("ln_f_chi_ref_unscaled",dist.Normal(0,1))
@@ -83,6 +84,10 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     # Reverse sort our AR process back into an array in which injections and each event's PE samples are grouped
     f_chi_eventSorted = f_chis[full_chi_data['chi_reverseSorting']]
 
+    p_chis = f_chis/jnp.trapz(f_chis,all_chi_samples)
+    entropy = -10.*jnp.trapz(p_chis*jnp.log(p_chis),all_chi_samples)
+    numpyro.factor("chi_entropy",entropy)
+
     ################################
     # Construct AR1 process in cost
     ################################
@@ -90,14 +95,15 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     # Follow the same strategies to construct an AR1 process over cost
     # First get the process' standard deviation
     ar_cost_std = numpyro.sample("ar_cost_std",dist.HalfNormal(1.))
+    #numpyro.factor("ar_cost_std_prior",ar_cost_std**2/2. - (ar_cost_std/0.75)**4/8.75)
     numpyro.factor("ar_cost_std_prior",ar_cost_std**2/2. - (ar_cost_std/0.75)**4/8.75)
 
     # Next the autocorrelation length
     logit_ar_cost_tau = numpyro.sample("logit_ar_cost_tau",dist.Normal(0,logit_std))
-    ar_cost_tau,jac_ar_cost_tau = get_value_from_logit(logit_ar_cost_tau,0.3,4.)
+    ar_cost_tau,jac_ar_cost_tau = get_value_from_logit(logit_ar_cost_tau,0.4,4.)
     numpyro.factor("p_ar_cost_tau",logit_ar_cost_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_cost_tau))
     numpyro.deterministic("ar_cost_tau",ar_cost_tau)
-    numpyro.factor("cost_regularization",-(ar_cost_std/jnp.sqrt(ar_cost_tau))**2/(2.*0.4**2))
+    #numpyro.factor("cost_regularization",-(ar_cost_std/jnp.sqrt(ar_cost_tau))**2/(2.*0.4**2))
 
     # Choose an initial reference value
     ln_f_cost_ref_unscaled = numpyro.sample("ln_f_cost_ref_unscaled",dist.Normal(0,1))
@@ -114,6 +120,10 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data):
     f_cost = jnp.exp(ln_f_costs)
     numpyro.deterministic("f_cost",f_cost)
     f_cost_eventSorted = f_cost[full_chi_data['cost_reverseSorting']]
+
+    p_cost = f_cost/jnp.trapz(f_cost,all_cost_samples)
+    entropy = -10.*jnp.trapz(p_cost*jnp.log(p_cost),all_cost_samples)
+    numpyro.factor("cost_entropy",entropy)
 
     ##############################
     # Remaining degrees of freedom
