@@ -1,5 +1,5 @@
 import numpyro
-nChains = 1#3
+nChains = 3
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC,init_to_value
 from jax import random
@@ -97,6 +97,6 @@ mcmc.print_summary()
 data = az.from_numpyro(mcmc)
 #az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_Xeff_Xp.cdf")
 #np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_Xeff_Xp_data.npy',full_Xeff_Xp_data)
-az.to_netcdf(data,"../data/ar_Xeff_Xp_entropy.cdf")
-np.save('../data/ar_Xeff_Xp_data_entropy.npy',full_Xeff_Xp_data)
+az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_Xeff_Xp.cdf")
+np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_Xeff_Xp_data.npy',full_Xeff_Xp_data)
 

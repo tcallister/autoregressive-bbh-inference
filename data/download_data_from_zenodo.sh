@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Download and unzip
-curl https://zenodo.org/record/7600140/files/autoregressive-bbh-inference-data.zip --output "autoregressive-bbh-inference-data.zip"
+curl https://zenodo.org/record/7616096/files/autoregressive-bbh-inference-data.zip --output "autoregressive-bbh-inference-data.zip"
 unzip autoregressive-bbh-inference-data.zip
 
 # Move input data to ../code/input/
