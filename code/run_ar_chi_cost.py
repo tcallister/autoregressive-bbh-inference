@@ -1,5 +1,4 @@
 import numpyro
-import sys
 nChains = 1#3
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC,init_to_median,init_to_value

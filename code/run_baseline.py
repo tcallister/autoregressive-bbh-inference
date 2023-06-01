@@ -1,11 +1,13 @@
 import numpyro
-nChains = 1
+nChains = 3
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC
+from jax import random
 from jax.config import config
 config.update("jax_enable_x64", True)
-from jax import random
 import arviz as az
+import numpy as np
+np.random.seed(117)
 from baseline_population import baseline
 from getData import *
 
@@ -13,11 +15,11 @@ from getData import *
 
 # Get dictionaries holding injections and posterior samples
 injectionDict = getInjections(reweight=False)
-sampleDict = getSamples(sample_limit=2000,reweight=True)
+sampleDict = getSamples(sample_limit=2000,reweight=True,weighting_function=reweighting_function_arlnm1_q)
 
 # Set up NUTS sampler over our likelihood
 kernel = NUTS(baseline)
-mcmc = MCMC(kernel,num_warmup=500,num_samples=500,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=500,num_samples=1000,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(119)
