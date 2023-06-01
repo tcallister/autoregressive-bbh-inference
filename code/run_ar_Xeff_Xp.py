@@ -84,8 +84,7 @@ init_values = {
             }
 """
 kernel = NUTS(ar_Xeff_Xp)#,init_strategy=init_to_value(values=init_values),dense_mass=[("ar_z_std","log_ar_z_tau"),("ar_q_std","log_ar_q_tau")])
-#mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
-mcmc = MCMC(kernel,num_warmup=500,num_samples=500,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(202)
