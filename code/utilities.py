@@ -135,6 +135,19 @@ def build_ar1(total,new_element):
     total = c*total+w
     return total,total
 
+def compute_prior_params(dR_max,dR_event,deltaX,N_events):
+
+    q_99 = scipy.special.gammaincinv(1/2,0.99)
+    Sigma_sig = np.log(dR_max)/(2.*q_99**0.5*scipy.special.erfinv(0.95))
+
+    dx_min = -(deltaX/N_events)*np.log(1.-(1.-np.exp(-N_events))/N_events)
+    Mu_ln_tau = np.log(deltaX/2.)
+    Sigma_ln_tau = (np.log(dx_min) - Mu_ln_tau)/(2**0.5*scipy.special.erfinv(1.-2*0.95))
+
+    Sigma_ratio = (np.log(dR_event)/(2.*scipy.special.erfinv(0.95)))*np.sqrt(N_events/(q_99*deltaX))
+
+    return Sigma_sig,Mu_ln_tau,Sigma_ln_tau,Sigma_ratio
+
 def truncated_gaussian(xs,mu,sigma,low_cutoff,high_cutoff):
 
     """
@@ -228,3 +241,7 @@ def calculate_gaussian_2D(chiEff, chiP, mu_eff, sigma2_eff, mu_p, sigma2_p, cov,
     y[chiEff<chi_min] = 0.
 
     return y
+
+if __name__=="__main__":
+
+    print(compute_prior_params(100,2,2,69))
