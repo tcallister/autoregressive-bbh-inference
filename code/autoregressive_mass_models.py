@@ -3,7 +3,6 @@ import numpyro.distributions as dist
 import jax.numpy as jnp
 from jax import vmap,lax
 import numpy as np
-from custom_distributions import *
 from utilities import *
 
 def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
