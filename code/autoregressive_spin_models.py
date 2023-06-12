@@ -223,6 +223,9 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data,\
     Nexp = jnp.sum(inj_weights)/injectionDict['nTrials']
     numpyro.factor("rate",-Nexp)
 
+    # Penalize
+    numpyro.factor("Neff_inj_penalty",jnp.log(1./(1.+(nEff_inj/(4.*nObs))**(-30.))))
+
     ###############################
     # Compute per-event likelihoods
     ###############################
@@ -265,7 +268,10 @@ def ar_spinMagTilt(sampleDict,injectionDict,full_chi_data,\
                         jnp.array([sampleDict[k]['a2_ar_indices'] for k in sampleDict]))
         
     # As a diagnostic, save minimum number of effective samples across all events
-    numpyro.deterministic('min_log_neff',jnp.min(jnp.log10(n_effs)))
+    min_log_neff = numpyro.deterministic('min_log_neff',jnp.min(jnp.log10(n_effs)))
+
+    # Penalize
+    numpyro.factor("Neff_penalty",jnp.log(1./(1.+(min_log_neff/0.6)**(-30.))))
 
     # Tally log-likelihoods across our catalog
     numpyro.factor("logp",jnp.sum(log_ps))
@@ -536,7 +542,7 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data,\
     numpyro.factor("rate",-Nexp)
 
     # Penalize
-    numpyro.factor("Neff_inj_penalty",jnp.log(1./(1.+(nEff_inj/(4.*nObs))**(-30.))))
+    #numpyro.factor("Neff_inj_penalty",jnp.log(1./(1.+(nEff_inj/(4.*nObs))**(-30.))))
     
     ###############################
     # Compute per-event likelihoods
@@ -580,7 +586,7 @@ def ar_Xeff_Xp(sampleDict,injectionDict,full_chi_data,\
     min_log_neff = numpyro.deterministic('min_log_neff',jnp.min(jnp.log10(n_effs)))
 
     # Penalize
-    numpyro.factor("Neff_penalty",jnp.log(1./(1.+(min_log_neff/0.6)**(-30.))))
+    #numpyro.factor("Neff_penalty",jnp.log(1./(1.+(min_log_neff/0.6)**(-30.))))
 
     # Tally log-likelihoods across our catalog
     numpyro.factor("logp",jnp.sum(log_ps))
