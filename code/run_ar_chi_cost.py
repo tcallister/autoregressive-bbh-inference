@@ -1,5 +1,5 @@
 import numpyro
-nChains = 1#3
+nChains = 3
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC,init_to_median,init_to_value
 from jax import random
@@ -110,7 +110,7 @@ init_values = {
 kernel = NUTS(ar_spinMagTilt,
                 dense_mass=[("ar_chi_std","log_ar_chi_tau"),("ar_cost_std","log_ar_cost_tau")],
                 init_strategy=init_to_value(values=init_values),target_accept_prob=0.9)
-mcmc = MCMC(kernel,num_warmup=300,num_samples=300,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=600,num_samples=1500,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(347)
