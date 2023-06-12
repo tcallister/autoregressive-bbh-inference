@@ -6,7 +6,7 @@ sys.path.append('./../code/')
 from utilities import *
 
 # Load inference results
-inference_data = az.from_netcdf("/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_z_0203.cdf")
+inference_data = az.from_netcdf("ar_z_test.cdf")
 samps = az.extract(inference_data,var_names=["R20","f_zs","ar_z_std","ar_z_tau",\
                 "alpha","mu_m1","sig_m1","log_f_peak","mMin","mMax","log_dmMin","log_dmMax","bq",\
                 "mu_chi","logsig_chi","sig_cost","nEff_inj_per_event","min_log_neff"])
@@ -30,7 +30,7 @@ nEff_inj_per_event = samps.nEff_inj_per_event.values
 min_log_neff = samps.min_log_neff.values
 
 # Also extract complete set of redshift values over which AR process is defined
-z_data = np.load('/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_z_data_0203.npy',allow_pickle=True)[()]
+z_data = np.load('ar_z_data_test.npy',allow_pickle=True)[()]
 z_values = z_data['z_allSamples']
 
 # For ease of plotting and storage, coarse-grain by a factor of 50
@@ -45,7 +45,7 @@ f_q_equal_1 = (1.+bq)/(1. - (tmp_min/m1_ref)**(1.+bq))
 R_of_zs = R_ref[np.newaxis,:]*f_zs_reduced*f_q_equal_1[np.newaxis,:]*m1_ref
 
 # Create hdf5 file and write posterior samples
-hfile = h5py.File('/Volumes/LaCie/cca/autoregressive-bbh-inference-data/ar_z_summary.hdf','w')
+hfile = h5py.File('ar_z_summary_test.hdf','w')
 posterior = hfile.create_group('posterior')
 posterior.create_dataset('zs',data=z_values_reduced)
 posterior.create_dataset('f_zs',data=f_zs_reduced)

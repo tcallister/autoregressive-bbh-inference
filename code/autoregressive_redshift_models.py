@@ -5,7 +5,11 @@ from jax import soft_pmap,vmap,lax
 import numpy as np
 from utilities import *
 
-def ar_mergerRate(sampleDict,injectionDict,full_z_data):
+def ar_mergerRate(sampleDict,injectionDict,full_z_data,\
+    z_std_std,
+    z_ln_tau_mu,
+    z_ln_tau_std,
+    z_regularization_std):
 
     """
     Likelihood model in which the BBH merger rate density vs. redshift is described as AR(1) processes, for use within `numpyro`.
@@ -34,27 +38,24 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data):
     z_deltas_low = z_deltas[:ind_z02][::-1]
     z_deltas_high = z_deltas[ind_z02:]
 
-    ###################################
-    # Constructing our lnm1 AR1 process
-    ###################################
+    ########################################
+    # Constructing our redshift AR1 process
+    ########################################
 
     # First get variance of the process
     # We will sample from a half normal distribution, but override this with a quadratic prior
     # on the processes' standard deviation; see Eq. B1
-    ar_z_std = numpyro.sample("ar_z_std",dist.HalfNormal(1.))
-    numpyro.factor("ar_z_std_prior",ar_z_std**2/2. - (ar_z_std/2.)**4/8.75)
+    ar_z_std = numpyro.sample("ar_z_std",dist.HalfNormal(z_std_std))
 
     # Next, the autocorrelation length
     # Since the posterior for this parameter runs up against prior boundaries, sample in the unbounded logit space,
     # Although the logit(tau) is sampled from a normal distribution, this prior is overridden with a
     # uniform prior on tau itself
-    logit_ar_z_tau = numpyro.sample("logit_ar_z_tau",dist.Normal(0,logit_std))
-    ar_z_tau,jac_ar_z_tau = get_value_from_logit(logit_ar_z_tau,0.2,1.5)
-    numpyro.factor("p_ar_z_tau",logit_ar_z_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_z_tau))
-    numpyro.deterministic("ar_z_tau",ar_z_tau)
+    log_ar_z_tau = numpyro.sample("log_ar_z_tau",dist.Normal(z_ln_tau_mu,z_ln_tau_std))
+    ar_z_tau = numpyro.deterministic("ar_z_tau",jnp.exp(log_ar_z_tau))
 
     # As discussed in Appendix B, we need a regularizing log-likelihood factor to help stabilize our inference; see Eq. B3
-    numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))**2/2.)
+    numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))**2/(2.*z_regularization_std**2))
 
     # Sample an initial rate density at reference point
     ln_f_z_ref_unscaled = numpyro.sample("ln_f_z_ref_unscaled",dist.Normal(0,1))

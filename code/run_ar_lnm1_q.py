@@ -87,13 +87,13 @@ q_std_std,q_ln_tau_mu,q_ln_tau_std,q_regularization_std = compute_prior_params(d
 # Set up NUTS sampler over our likelihood
 init_values = {
             'ar_lnm1_std':1.,
-            'log_ar_lnm1_tau':0.,
+            'log_ar_lnm1_tau':0.5,
             'ar_q_std':1.,
             'log_ar_q_tau':0.,
             'mu_chi':0.1
             }
-kernel = NUTS(ar_lnm1_q,init_strategy=init_to_value(values=init_values),dense_mass=[("ar_lnm1_std","logit_ar_lnm1_tau"),("ar_q_std","logit_ar_q_tau")])
-mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
+kernel = NUTS(ar_lnm1_q,init_strategy=init_to_value(values=init_values),dense_mass=[("ar_lnm1_std","log_ar_lnm1_tau"),("ar_q_std","log_ar_q_tau")])
+mcmc = MCMC(kernel,num_warmup=300,num_samples=300,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(1206)

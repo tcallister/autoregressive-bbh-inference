@@ -249,7 +249,7 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data,\
                         jnp.array([sampleDict[k]['ar_indices'] for k in sampleDict]))
         
     # As a diagnostic, save minimum number of effective samples across all events
-    min_log_neff_numpyro.deterministic('min_log_neff',jnp.min(jnp.log10(n_effs)))
+    min_log_neff = numpyro.deterministic('min_log_neff',jnp.min(jnp.log10(n_effs)))
 
     # Penalize
     numpyro.factor("Neff_penalty",jnp.log(1./(1.+(min_log_neff/0.6)**(-30.))))
