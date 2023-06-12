@@ -1,5 +1,5 @@
 import numpyro
-nChains = 3
+nChains = 1
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC,init_to_value
 from jax import random
@@ -11,6 +11,7 @@ import numpy as np
 np.random.seed(138)
 from autoregressive_redshift_models import ar_mergerRate
 from getData import *
+from utilities import compute_prior_params
 
 # Run over several chains to check convergence
 
@@ -55,18 +56,28 @@ full_z_data = {'z_allSamples':all_z_samples[z_sorting],
                 'ind_z02':np.argmin((all_z_samples[z_sorting]-0.2)**2.),
                 'injections_from_allSamples':z_injection_indices}
 
+# Compute hyperparameter constraints
+dR_max = 100
+dR_event = 2
+N = 69
+Delta_z = 1.
+z_std_std,z_ln_tau_mu,z_ln_tau_std,z_regularization_std = compute_prior_params(dR_max,dR_event,Delta_z,N)
+
 # Set up NUTS sampler over our likelihood
-kernel = NUTS(ar_mergerRate,dense_mass=[("ar_z_std","logit_ar_z_tau")])
-mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
+kernel = NUTS(ar_mergerRate,dense_mass=[("ar_z_std","log_ar_z_tau")])
+mcmc = MCMC(kernel,num_warmup=300,num_samples=500,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(139)
 rng_key,rng_key_ = random.split(rng_key)
-mcmc.run(rng_key_,sampleDict,injectionDict,full_z_data)
+mcmc.run(rng_key_,sampleDict,injectionDict,full_z_data,\
+    z_std_std=z_std_std,z_ln_tau_mu=z_ln_tau_mu,z_ln_tau_std=z_ln_tau_std,z_regularization_std=z_regularization_std)
 mcmc.print_summary()
 
 # Save out data
 data = az.from_numpyro(mcmc)
-az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_z.cdf")
-np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_z_data.npy',full_z_data)
+az.to_netcdf(data,"./../data/ar_z_test.cdf")
+np.save('./../data/ar_z_data_test.npy',full_z_data)
+#az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_z.cdf")
+#np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_z_data.npy',full_z_data)
 

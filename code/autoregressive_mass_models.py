@@ -5,7 +5,15 @@ from jax import vmap,lax
 import numpy as np
 from utilities import *
 
-def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
+def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data,\
+    lnm1_std_std,
+    lnm1_ln_tau_mu,
+    lnm1_ln_tau_std,
+    lnm1_regularization_std,
+    q_std_std,
+    q_ln_tau_mu,
+    q_ln_tau_std,
+    q_regularization_std):
 
     """
     Likelihood model in which the BBH ln(m1) and q distributions are described as AR(1) processes, for use within `numpyro`.
@@ -45,20 +53,14 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     # First get variance of the process
     # We will sample from a half normal distribution, but override this with a quadratic prior
     # on the processes' standard deviation; see Eq. B1
-    ar_lnm1_std = numpyro.sample("ar_lnm1_std",dist.HalfNormal(1))
-    #numpyro.factor("ar_lnm1_std_prior",ar_lnm1_std**2/2. - (ar_lnm1_std/2.)**4/8.75)
-    numpyro.factor("ar_lnm1_std_prior",ar_lnm1_std**2/2. - (ar_lnm1_std/1.)**4/8.75)
+    ar_lnm1_std = numpyro.sample("ar_lnm1_std",dist.HalfNormal(lnm1_std_std))
 
     # Next, the autocorrelation length
-    #log_ar_lnm1_tau = numpyro.sample("log_ar_lnm1_tau",dist.Normal(0,0.75))
-    #ar_lnm1_tau = numpyro.deterministic("ar_lnm1_tau",10.**log_ar_lnm1_tau)
-    logit_ar_lnm1_tau = numpyro.sample("logit_ar_lnm1_tau",dist.Normal(0,logit_std))
-    ar_lnm1_tau,jac_ar_lnm1_tau = get_value_from_logit(logit_ar_lnm1_tau,0.3,4.)
-    numpyro.factor("p_ar_lnm1_tau",logit_ar_lnm1_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_lnm1_tau))
-    numpyro.deterministic("ar_lnm1_tau",ar_lnm1_tau)
+    log_ar_lnm1_tau = numpyro.sample("log_ar_lnm1_tau",dist.Normal(lnm1_ln_tau_mu,lnm1_ln_tau_std))
+    ar_lnm1_tau = numpyro.deterministic("ar_lnm1_tau",jnp.exp(log_ar_lnm1_tau))
 
     # As discussed in Appendix B, we need a regularizing log-likelihood factor to help stabilize our inference; see Eq. B3
-    #numpyro.factor("lnm1_regularization",-(ar_lnm1_std/jnp.sqrt(ar_lnm1_tau))**2/(2.*0.5**2))
+    numpyro.factor("lnm1_regularization",-(ar_lnm1_std/jnp.sqrt(ar_lnm1_tau))**2/(2.*lnm1_regularization_std**2))
 
     # Sample an initial rate density at the reference mass point
     # First draw un unscaled variable from N(0,1), then rescale by the standard deviation
@@ -87,28 +89,20 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     # Reverse sort our AR process back into an array in which injections and each event's PE samples are grouped
     f_lnm1s_eventSorted = f_lnm1s[full_lnm1_q_data['lnm1_reverseSorting']]
 
-    p_lnm1s = f_lnm1s/jnp.trapz(f_lnm1s,all_lnm1_samples)
-    entropy = -10.*jnp.trapz(p_lnm1s*jnp.log(p_lnm1s),all_lnm1_samples)
-    numpyro.factor("lnm1_entropy",entropy)
-
     ############################
     # Construct AR1 process in q
     ############################
 
     # Follow the same strategies to construct an AR1 process over mass ratio
     # First get the process' standard deviation
-    ar_q_std = numpyro.sample("ar_q_std",dist.HalfNormal(1))
-    #numpyro.factor("ar_q_std_prior",ar_q_std**2/2. - (ar_q_std/2.)**4/8.75)
-    numpyro.factor("ar_q_std_prior",ar_q_std**2/2. - (ar_q_std/1.)**4/8.75)
+    ar_q_std = numpyro.sample("ar_q_std",dist.HalfNormal(q_std_std))
 
     # Next the autocorrelation length
-    #log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(-0.3,0.5))
-    #ar_q_tau = numpyro.deterministic("ar_q_tau",10.**log_ar_q_tau)
-    #numpyro.factor("q_regularization",-(ar_q_std/jnp.sqrt(ar_q_tau))**2/(2.*0.5**2))
-    logit_ar_q_tau = numpyro.sample("logit_ar_q_tau",dist.Normal(0,logit_std))
-    ar_q_tau,jac_ar_q_tau = get_value_from_logit(logit_ar_q_tau,0.2,2.)
-    numpyro.factor("p_ar_q_tau",logit_ar_q_tau**2/(2.*logit_std**2)-jnp.log(jac_ar_q_tau))
-    numpyro.deterministic("ar_q_tau",ar_q_tau)
+    log_ar_q_tau = numpyro.sample("log_ar_q_tau",dist.Normal(q_ln_tau_mu,q_ln_tau_std))
+    ar_q_tau = numpyro.deterministic("ar_q_tau",jnp.exp(log_ar_q_tau))
+
+    # And regularize
+    numpyro.factor("q_regularization",-(ar_q_std/jnp.sqrt(ar_q_tau))**2/(2.*q_regularization_std**2))
 
     # Choose an initial reference value
     ln_f_q_ref_unscaled = numpyro.sample("ln_f_q_ref_unscaled",dist.Normal(0,1))
@@ -125,10 +119,6 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     f_qs = jnp.exp(ln_f_qs)
     numpyro.deterministic("f_qs",f_qs)
     f_qs_eventSorted = f_qs[full_lnm1_q_data['q_reverseSorting']]
-
-    p_qs = f_qs/jnp.trapz(f_qs,all_q_samples)
-    entropy = -10.*jnp.trapz(p_qs*jnp.log(p_qs),all_q_samples)
-    numpyro.factor("q_entropy",entropy)
 
     ##############################
     # Remaining degrees of freedom
@@ -168,13 +158,6 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     # Compute normalization factors necessary to ensure that `R20` is correctly defined as the
     # merger rate at the desired reference mass and redshift values
     f_z_norm = (1+0.2)**kappa
-
-    # Entropy penalization
-    #p_lnm1 = f_lnm1s/jnp.trapz(f_lnm1s,all_lnm1_samples)
-    #p_q = f_qs/jnp.trapz(f_qs,all_q_samples)
-    #S_lnm1 = -jnp.trapz(p_lnm1*jnp.log(p_lnm1),all_lnm1_samples)
-    #S_q = -jnp.trapz(p_q*jnp.log(p_q),all_q_samples)
-    #numpyro.factor("entropy",S_lnm1+S_q)
 
     ###############################
     # Expected number of detections
@@ -218,6 +201,9 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
     # Compute total expected number of detections and add to log-likelihood
     Nexp = jnp.sum(inj_weights)/injectionDict['nTrials']
     numpyro.factor("rate",-Nexp)
+
+    # Penalize
+    numpyro.factor("Neff_inj_penalty",jnp.log(1./(1.+(nEff_inj/(4.*nObs))**(-30.))))
 
     ###############################
     # Compute per-event likelihoods
@@ -263,7 +249,10 @@ def ar_lnm1_q(sampleDict,injectionDict,full_lnm1_q_data):
                         jnp.array([sampleDict[k]['ar_indices'] for k in sampleDict]))
         
     # As a diagnostic, save minimum number of effective samples across all events
-    numpyro.deterministic('min_log_neff',jnp.min(jnp.log10(n_effs)))
+    min_log_neff = numpyro.deterministic('min_log_neff',jnp.min(jnp.log10(n_effs)))
+
+    # Penalize
+    numpyro.factor("Neff_penalty",jnp.log(1./(1.+(min_log_neff/0.6)**(-30.))))
 
     # Tally log-likelihoods across our catalog
     numpyro.factor("logp",jnp.sum(log_ps))
