@@ -1,5 +1,5 @@
 import numpyro
-nChains = 3
+nChains = 1
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC,init_to_value
 from jax import random
@@ -11,6 +11,7 @@ import numpy as np
 np.random.seed(1207)
 from autoregressive_mass_models import ar_lnm1_q
 from getData import *
+from utilities import compute_prior_params
 
 # Get dictionaries holding injections and posterior samples
 injectionDict = getInjections(reweight=False)
@@ -74,6 +75,15 @@ full_lnm1_q_data = {'all_lnm1_samples':all_lnm1_samples[lnm1_sorting],
                 'q_reverseSorting':q_sorting_into_events,
                 'injections_from_allSamples':m1_injection_indices}
 
+# Compute hyperparameter constraints
+dR_max = 100
+dR_event = 2
+N = 69
+Delta_lnm1 = 4.
+Delta_q = 1.
+lnm1_std_std,lnm1_ln_tau_mu,lnm1_ln_tau_std,lnm1_regularization_std = compute_prior_params(dR_max,dR_event,Delta_lnm1,N)
+q_std_std,q_ln_tau_mu,q_ln_tau_std,q_regularization_std = compute_prior_params(dR_max,dR_event,Delta_q,N)
+
 # Set up NUTS sampler over our likelihood
 init_values = {
             'ar_lnm1_std':1.,
@@ -88,13 +98,15 @@ mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(1206)
 rng_key,rng_key_ = random.split(rng_key)
-mcmc.run(rng_key_,sampleDict,injectionDict,full_lnm1_q_data)
+mcmc.run(rng_key_,sampleDict,injectionDict,full_lnm1_q_data,\
+    lnm1_std_std=lnm1_std_std,lnm1_ln_tau_mu=lnm1_ln_tau_mu,lnm1_ln_tau_std=lnm1_ln_tau_std,lnm1_regularization_std=lnm1_regularization_std,\
+    q_std_std=q_std_std,q_ln_tau_mu=q_ln_tau_mu,q_ln_tau_std=q_ln_tau_std,q_regularization_std=q_regularization_std)
 
 # Save out data
 data = az.from_numpyro(mcmc)
 #az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_lnm1_q.cdf")
 #np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_lnm1_q_data.npy',full_lnm1_q_data)
-#az.to_netcdf(data,"./../data/ar_lnm1_q_entropy.cdf")
-#np.save('./../data/ar_lnm1_q_data_entropy.npy',full_lnm1_q_data)
-az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q.cdf")
-np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q_data.npy',full_lnm1_q_data)
+az.to_netcdf(data,"./../data/ar_lnm1_q_test.cdf")
+np.save('./../data/ar_lnm1_q_data_test.npy',full_lnm1_q_data)
+#az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q.cdf")
+#np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q_data.npy',full_lnm1_q_data)
