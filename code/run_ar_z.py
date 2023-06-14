@@ -60,12 +60,13 @@ full_z_data = {'z_allSamples':all_z_samples[z_sorting],
 dR_max = 100
 dR_event = 2
 N = 69
-Delta_z = 1.
+Delta_z = 2
 z_std_std,z_ln_tau_mu,z_ln_tau_std,z_regularization_std = compute_prior_params(dR_max,dR_event,Delta_z,N)
 
 # Set up NUTS sampler over our likelihood
-kernel = NUTS(ar_mergerRate,dense_mass=[("ar_z_std","log_ar_z_tau")])
-mcmc = MCMC(kernel,num_warmup=300,num_samples=500,num_chains=nChains)
+#init_values = {'ar_z_std':0.8,'ar_z_tau':0.2}
+kernel = NUTS(ar_mergerRate,dense_mass=[("ar_z_std","ar_ratio","logR20")])#,init_strategy=init_to_value(values=init_values),target_accept_prob=0.9)
+mcmc = MCMC(kernel,num_warmup=500,num_samples=500,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(139)

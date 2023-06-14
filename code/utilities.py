@@ -145,6 +145,7 @@ def compute_prior_params(dR_max,dR_event,deltaX,N_events):
     Sigma_ln_tau = (np.log(dx_min) - Mu_ln_tau)/(2**0.5*scipy.special.erfinv(1.-2*0.95))
 
     Sigma_ratio = (np.log(dR_event)/(2.*scipy.special.erfinv(0.95)))*np.sqrt(N_events/(q_99*deltaX))
+    print(dx_min)
 
     return Sigma_sig,Mu_ln_tau,Sigma_ln_tau,Sigma_ratio
 
@@ -244,4 +245,10 @@ def calculate_gaussian_2D(chiEff, chiP, mu_eff, sigma2_eff, mu_p, sigma2_p, cov,
 
 if __name__=="__main__":
 
-    print(compute_prior_params(100,2,2,69))
+    #print("lnm1",compute_prior_params(100,2,4,69))
+    #print("q",compute_prior_params(100,2,1,69))
+    print("z",compute_prior_params(100,10,1,69))
+    #print("chi",compute_prior_params(100,1.5,1,2*69))
+    #print("cost",compute_prior_params(100,1.5,2,2*69))
+    #print("Xeff",compute_prior_params(100,2,2,69))
+    #print("Xp",compute_prior_params(100,2,1,69))

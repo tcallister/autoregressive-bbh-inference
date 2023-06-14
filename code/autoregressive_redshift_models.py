@@ -51,11 +51,20 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data,\
     # Since the posterior for this parameter runs up against prior boundaries, sample in the unbounded logit space,
     # Although the logit(tau) is sampled from a normal distribution, this prior is overridden with a
     # uniform prior on tau itself
-    log_ar_z_tau = numpyro.sample("log_ar_z_tau",dist.Normal(z_ln_tau_mu,z_ln_tau_std))
-    ar_z_tau = numpyro.deterministic("ar_z_tau",jnp.exp(log_ar_z_tau))
+    #log_ar_z_tau = numpyro.sample("log_ar_z_tau",dist.Normal(z_ln_tau_mu,z_ln_tau_std))
+    #ar_z_tau = numpyro.deterministic("ar_z_tau",jnp.exp(log_ar_z_tau))
+    #ar_z_tau = numpyro.sample("ar_z_tau",dist.HalfNormal(4.))
 
     # As discussed in Appendix B, we need a regularizing log-likelihood factor to help stabilize our inference; see Eq. B3
-    numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))**2/(2.*z_regularization_std**2))
+    #numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))**2/(2.*z_regularization_std**2))
+
+    #####
+    # Try changing sampling order
+    ar_ratio = numpyro.sample("ar_ratio",dist.HalfNormal(z_regularization_std))
+    ar_z_tau = numpyro.deterministic("ar_z_tau",(ar_z_std/ar_ratio)**2)
+    log_ar_z_tau = numpyro.deterministic("log_ar_z_tau",jnp.log(ar_z_tau))
+    numpyro.factor("p_tau",-(log_ar_z_tau-z_ln_tau_mu)**2/(2.*z_ln_tau_std**2))
+    #####
 
     # Sample an initial rate density at reference point
     ln_f_z_ref_unscaled = numpyro.sample("ln_f_z_ref_unscaled",dist.Normal(0,1))
@@ -101,7 +110,7 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data,\
     # logsig_chi: Log10 of the chi-effective distribution's standard deviation
 
     # Sample the merger rate at our reference mass and redshift values
-    logR20 = numpyro.sample("logR20",dist.Uniform(-6,3))
+    logR20 = numpyro.sample("logR20",dist.Uniform(-6,5))
     R20 = numpyro.deterministic("R20",10.**logR20)
 
     # Sample our baseline hyperparameters for masses and component spins
@@ -190,6 +199,9 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data,\
     # Compute net detection efficiency and add to log-likelihood
     Nexp = jnp.sum(inj_weights)/injectionDict['nTrials']
     numpyro.factor("rate",-Nexp)
+
+    # Penalize
+    numpyro.factor("Neff_inj_penalty",jnp.log(1./(1.+(nEff_inj/(4.*nObs))**(-30.))))
     
     ###############################
     # Compute per-event likelihoods
@@ -235,7 +247,10 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data,\
                         jnp.array([sampleDict[k]['ar_indices'] for k in sampleDict]))
         
     # As a diagnostic, save minimum number of effective samples across all events
-    numpyro.deterministic('min_log_neff',jnp.min(jnp.log10(n_effs)))
+    min_log_neff = numpyro.deterministic('min_log_neff',jnp.min(jnp.log10(n_effs)))
+
+    # Penalize
+    numpyro.factor("Neff_penalty",jnp.log(1./(1.+(min_log_neff/0.6)**(-30.))))
 
     # Tally log-likelihoods across our catalog
     numpyro.factor("logp",jnp.sum(log_ps))
