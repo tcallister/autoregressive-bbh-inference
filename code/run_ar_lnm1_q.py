@@ -1,5 +1,5 @@
 import numpyro
-nChains = 1
+nChains = 3
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC,init_to_value
 from jax import random
@@ -93,7 +93,7 @@ init_values = {
             'mu_chi':0.1
             }
 kernel = NUTS(ar_lnm1_q,init_strategy=init_to_value(values=init_values),dense_mass=[("ar_lnm1_std","log_ar_lnm1_tau"),("ar_q_std","log_ar_q_tau")])
-mcmc = MCMC(kernel,num_warmup=300,num_samples=300,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(1206)
@@ -106,7 +106,7 @@ mcmc.run(rng_key_,sampleDict,injectionDict,full_lnm1_q_data,\
 data = az.from_numpyro(mcmc)
 #az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_lnm1_q.cdf")
 #np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_lnm1_q_data.npy',full_lnm1_q_data)
-az.to_netcdf(data,"./../data/ar_lnm1_q_test.cdf")
-np.save('./../data/ar_lnm1_q_data_test.npy',full_lnm1_q_data)
-#az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q.cdf")
-#np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q_data.npy',full_lnm1_q_data)
+#az.to_netcdf(data,"./../data/ar_lnm1_q_test.cdf")
+#np.save('./../data/ar_lnm1_q_data_test.npy',full_lnm1_q_data)
+az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q.cdf")
+np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q_data.npy',full_lnm1_q_data)
