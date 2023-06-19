@@ -1,5 +1,5 @@
 import numpyro
-nChains = 1
+nChains = 3
 numpyro.set_host_device_count(nChains)
 from numpyro.infer import NUTS,MCMC,init_to_value
 from jax import random
@@ -64,21 +64,19 @@ Delta_z = 2
 z_std_std,z_ln_tau_mu,z_ln_tau_std,z_regularization_std = compute_prior_params(dR_max,dR_event,Delta_z,N)
 
 # Set up NUTS sampler over our likelihood
-#init_values = {'ar_z_std':0.8,'ar_z_tau':0.2}
-kernel = NUTS(ar_mergerRate,dense_mass=[("ar_z_std","ar_ratio","logR20")])#,init_strategy=init_to_value(values=init_values),target_accept_prob=0.9)
-mcmc = MCMC(kernel,num_warmup=500,num_samples=500,num_chains=nChains)
+kernel = NUTS(ar_mergerRate,dense_mass=[("ar_z_std","ar_ratio","logR20")])
+mcmc = MCMC(kernel,num_warmup=1000,num_samples=1500,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(139)
 rng_key,rng_key_ = random.split(rng_key)
 mcmc.run(rng_key_,sampleDict,injectionDict,full_z_data,\
     z_std_std=z_std_std,z_ln_tau_mu=z_ln_tau_mu,z_ln_tau_std=z_ln_tau_std,z_regularization_std=z_regularization_std)
-mcmc.print_summary()
 
 # Save out data
 data = az.from_numpyro(mcmc)
-az.to_netcdf(data,"./../data/ar_z_test.cdf")
-np.save('./../data/ar_z_data_test.npy',full_z_data)
-#az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_z.cdf")
-#np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_z_data.npy',full_z_data)
+#az.to_netcdf(data,"./../data/ar_z_test.cdf")
+#np.save('./../data/ar_z_data_test.npy',full_z_data)
+az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_z.cdf")
+np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_z_data.npy',full_z_data)
 

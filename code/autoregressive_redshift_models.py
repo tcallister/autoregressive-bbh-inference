@@ -47,24 +47,14 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data,\
     # on the processes' standard deviation; see Eq. B1
     ar_z_std = numpyro.sample("ar_z_std",dist.HalfNormal(z_std_std))
 
-    # Next, the autocorrelation length
-    # Since the posterior for this parameter runs up against prior boundaries, sample in the unbounded logit space,
-    # Although the logit(tau) is sampled from a normal distribution, this prior is overridden with a
-    # uniform prior on tau itself
-    #log_ar_z_tau = numpyro.sample("log_ar_z_tau",dist.Normal(z_ln_tau_mu,z_ln_tau_std))
-    #ar_z_tau = numpyro.deterministic("ar_z_tau",jnp.exp(log_ar_z_tau))
-    #ar_z_tau = numpyro.sample("ar_z_tau",dist.HalfNormal(4.))
-
-    # As discussed in Appendix B, we need a regularizing log-likelihood factor to help stabilize our inference; see Eq. B3
-    #numpyro.factor("z_regularization",-(ar_z_std/jnp.sqrt(ar_z_tau))**2/(2.*z_regularization_std**2))
-
-    #####
     # Try changing sampling order
+    # Sampling actually proceeds more smoothly if we do not sample tau or log-tau directly, but instead the *ratio* between sigma/sqrt(tau).
+    # As noted in our appendices, we place a regularization term on this ratio, and so treat this regularization as a direct prior on the ratio.
+    # After directly drawing a ratio, then indirectly add the underlying prior on log-tau itself
     ar_ratio = numpyro.sample("ar_ratio",dist.HalfNormal(z_regularization_std))
     ar_z_tau = numpyro.deterministic("ar_z_tau",(ar_z_std/ar_ratio)**2)
     log_ar_z_tau = numpyro.deterministic("log_ar_z_tau",jnp.log(ar_z_tau))
     numpyro.factor("p_tau",-(log_ar_z_tau-z_ln_tau_mu)**2/(2.*z_ln_tau_std**2))
-    #####
 
     # Sample an initial rate density at reference point
     ln_f_z_ref_unscaled = numpyro.sample("ln_f_z_ref_unscaled",dist.Normal(0,1))

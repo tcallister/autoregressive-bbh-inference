@@ -110,7 +110,7 @@ init_values = {
 kernel = NUTS(ar_spinMagTilt,
                 dense_mass=[("ar_chi_std","log_ar_chi_tau"),("ar_cost_std","log_ar_cost_tau")],
                 init_strategy=init_to_value(values=init_values),target_accept_prob=0.9)
-mcmc = MCMC(kernel,num_warmup=600,num_samples=750,num_chains=nChains)
+mcmc = MCMC(kernel,num_warmup=600,num_samples=1500,num_chains=nChains)
 
 # Choose a random key and run over our model
 rng_key = random.PRNGKey(347)
@@ -123,7 +123,7 @@ mcmc.run(rng_key_,sampleDict,injectionDict,full_chi_data,
 data = az.from_numpyro(mcmc)
 #az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_chi_cost.cdf")
 #np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_chi_cost_data.npy',full_chi_data)
-az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_chi_cost.cdf")
-np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_chi_cost_data.npy',full_chi_data)
+az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/full_ar_chi_cost.cdf")
+np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/full_ar_chi_cost_data.npy',full_chi_data)
 
 
