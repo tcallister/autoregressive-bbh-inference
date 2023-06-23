@@ -1,0 +1,8 @@
+\newcommand{\MarginalRedshiftFitSigmoidZCenter}{0.64}
+\newcommand{\MarginalRedshiftFitSigmoidDeltaZ}{0.08}
+\newcommand{\MarginalRedshiftFitSigmoidRateLow}{25.0}
+\newcommand{\MarginalRedshiftFitSigmoidDeltaRate}{33.9}
+\newcommand{\MarginalRedshiftFitBplZBreak}{0.44}
+\newcommand{\MarginalRedshiftFitBplKappaLow}{0.2}
+\newcommand{\MarginalRedshiftFitBplKappaHigh}{3.5}
+\newcommand{\MarginalRedshiftFitBplRateBreak}{26.4}

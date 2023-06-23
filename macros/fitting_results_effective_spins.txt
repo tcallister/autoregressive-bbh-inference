@@ -1,8 +1,8 @@
-\newcommand{\ChiEffFitGaussianMean}{0.06}
-\newcommand{\ChiEffFitGaussianStd}{0.11}
-\newcommand{\ChiEffFitLorentzianMean}{0.06}
-\newcommand{\ChiEffFitLorentzianGamma}{0.09}
+\newcommand{\ChiEffFitGaussianMean}{0.07}
+\newcommand{\ChiEffFitGaussianStd}{0.09}
+\newcommand{\ChiEffFitLorentzianMean}{0.07}
+\newcommand{\ChiEffFitLorentzianGamma}{0.07}
 \newcommand{\ChiPFitGaussianMean}{0.0}
-\newcommand{\ChiPFitGaussianStd}{0.37}
+\newcommand{\ChiPFitGaussianStd}{0.23}
 \newcommand{\ChiPFitLorentzianMean}{0.0}
-\newcommand{\ChiPFitLorentzianGamma}{0.30}
+\newcommand{\ChiPFitLorentzianGamma}{0.18}

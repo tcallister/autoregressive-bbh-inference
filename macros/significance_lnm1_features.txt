@@ -1,5 +1,5 @@
 \newcommand{\MassSignificancePercentageLowPeak}{96\%}
-\newcommand{\MassSignificancePercentageHighPeak}{93\%}
-\newcommand{\MassSignificanceLowSlope}{-1.2^{+2.7}_{-2.6}}
-\newcommand{\MassSignificanceHighSlope}{-4.1^{+2.7}_{-2.9}}
-\newcommand{\MassSignificancePercentageSteepening}{91\%}
+\newcommand{\MassSignificancePercentageHighPeak}{94\%}
+\newcommand{\MassSignificanceLowSlope}{-1.1^{+2.7}_{-2.6}}
+\newcommand{\MassSignificanceHighSlope}{-3.8^{+2.6}_{-2.7}}
+\newcommand{\MassSignificancePercentageSteepening}{89\%}

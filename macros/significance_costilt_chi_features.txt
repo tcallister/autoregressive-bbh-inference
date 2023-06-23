@@ -1,0 +1,2 @@
+\newcommand{\TiltSignificancePercentagePeak}{37\%}
+\newcommand{\MagnitudeSignificancePercentagePeak}{66\%}

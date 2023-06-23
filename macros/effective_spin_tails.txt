@@ -1,0 +1,8 @@
+\newcommand{\EffectiveSpinTailLowTwo}{-0.35}
+\newcommand{\EffectiveSpinTailLowFour}{-0.17}
+\newcommand{\EffectiveSpinTailHighTwo}{0.53}
+\newcommand{\EffectiveSpinTailHighFour}{0.35}
+\newcommand{\PrecessingSpinTailLowTwo}{0.02}
+\newcommand{\PrecessingSpinTailLowFour}{0.02}
+\newcommand{\PrecessingSpinTailHighTwo}{0.89}
+\newcommand{\PrecessingSpinTailHighFour}{0.78}

@@ -1,7 +1,7 @@
-\newcommand{\ChiEffPercentNegative}{33^{+14}_{-13}\%}
-\newcommand{\ChiEffRateNegative}{9.4^{+8.3}_{-4.5}}
-\newcommand{\ChiPPercentLarge}{59^{+21}_{-38}\%}
-\newcommand{\ChiEffAsymmetricPercentage}{97.3\%}
-\newcommand{\ChiEffMedianPercentPositive}{96.7\%}
-\newcommand{\ChiEffMeanPercentPositive}{74.9\%}
-\newcommand{\ChiEffMean}{0.03^{+0.05}_{-0.08}}
+\newcommand{\ChiEffPercentNegative}{27^{+17}_{-14}\%}
+\newcommand{\ChiEffRateNegative}{7.7^{+8.2}_{-4.3}}
+\newcommand{\ChiPPercentLarge}{42^{+35}_{-32}\%}
+\newcommand{\ChiEffAsymmetricPercentage}{98.3\%}
+\newcommand{\ChiEffMedianPercentPositive}{98.2\%}
+\newcommand{\ChiEffMeanPercentPositive}{81.8\%}
+\newcommand{\ChiEffMean}{0.04^{+0.05}_{-0.09}}
