@@ -123,7 +123,7 @@ mcmc.run(rng_key_,sampleDict,injectionDict,full_chi_data,
 data = az.from_numpyro(mcmc)
 #az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_chi_cost.cdf")
 #np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_chi_cost_data.npy',full_chi_data)
-az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_chi_cost.cdf")
-np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_chi_cost_data.npy',full_chi_data)
+az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/full_ar_chi_cost.cdf")
+np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/full_ar_chi_cost_data.npy',full_chi_data)
 
 
