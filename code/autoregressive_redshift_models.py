@@ -47,7 +47,6 @@ def ar_mergerRate(sampleDict,injectionDict,full_z_data,\
     # on the processes' standard deviation; see Eq. B1
     ar_z_std = numpyro.sample("ar_z_std",dist.HalfNormal(z_std_std))
 
-    # Try changing sampling order
     # Sampling actually proceeds more smoothly if we do not sample tau or log-tau directly, but instead the *ratio* between sigma/sqrt(tau).
     # As noted in our appendices, we place a regularization term on this ratio, and so treat this regularization as a direct prior on the ratio.
     # After directly drawing a ratio, then indirectly add the underlying prior on log-tau itself
