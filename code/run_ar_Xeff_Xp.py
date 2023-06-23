@@ -84,16 +84,7 @@ Xeff_std_std,Xeff_ln_tau_mu,Xeff_ln_tau_std,Xeff_regularization_std = compute_pr
 Xp_std_std,Xp_ln_tau_mu,Xp_ln_tau_std,Xp_regularization_std = compute_prior_params(dR_max,dR_event,Delta_Xp,N)
 
 # Set up NUTS sampler over our likelihood
-"""
-init_values = {
-            'ar_Xeff_std':1.8,
-            'log_ar_Xeff_tau':0.,
-            'ar_q_std':1.2,
-            'log_ar_q_tau':0.,
-            'mu_chi':0.1
-            }
-"""
-kernel = NUTS(ar_Xeff_Xp)#,init_strategy=init_to_value(values=init_values),dense_mass=[("ar_z_std","log_ar_z_tau"),("ar_q_std","log_ar_q_tau")])
+kernel = NUTS(ar_Xeff_Xp)
 mcmc = MCMC(kernel,num_warmup=750,num_samples=1500,num_chains=nChains)
 
 # Choose a random key and run over our model
@@ -102,14 +93,9 @@ rng_key,rng_key_ = random.split(rng_key)
 mcmc.run(rng_key_,sampleDict,injectionDict,full_Xeff_Xp_data,\
     Xeff_std_std=Xeff_std_std,Xeff_ln_tau_mu=Xeff_ln_tau_mu,Xeff_ln_tau_std=Xeff_ln_tau_std,Xeff_regularization_std=Xeff_regularization_std,\
     Xp_std_std=Xp_std_std,Xp_ln_tau_mu=Xp_ln_tau_mu,Xp_ln_tau_std=Xp_ln_tau_std,Xp_regularization_std=Xp_regularization_std)
-#mcmc.print_summary()
 
 # Save out data
 data = az.from_numpyro(mcmc)
-#az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_Xeff_Xp.cdf")
-#np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_Xeff_Xp_data.npy',full_Xeff_Xp_data)
 az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_Xeff_Xp.cdf")
 np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_Xeff_Xp_data.npy',full_Xeff_Xp_data)
-#az.to_netcdf(data,"./../data/ar_Xeff_Xp_test.cdf")
-#np.save('./../data/ar_Xeff_Xp_test_data.npy',full_Xeff_Xp_data)
 

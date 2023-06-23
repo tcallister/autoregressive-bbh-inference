@@ -99,9 +99,6 @@ Delta_cost = 2.
 chi_std_std,chi_ln_tau_mu,chi_ln_tau_std,chi_regularization_std = compute_prior_params(dR_max,dR_event,Delta_chi,N)
 cost_std_std,cost_ln_tau_mu,cost_ln_tau_std,cost_regularization_std = compute_prior_params(dR_max,dR_event,Delta_cost,N)
 
-print(chi_std_std,chi_ln_tau_mu,chi_ln_tau_std,chi_regularization_std)
-print(cost_std_std,cost_ln_tau_mu,cost_ln_tau_std,cost_regularization_std)
-
 # Set up NUTS sampler over our likelihood
 init_values = {
             'ar_chi_std':1.,
@@ -121,8 +118,6 @@ mcmc.run(rng_key_,sampleDict,injectionDict,full_chi_data,
 
 # Save out data
 data = az.from_numpyro(mcmc)
-#az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_chi_cost.cdf")
-#np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_chi_cost_data.npy',full_chi_data)
 az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/full_ar_chi_cost.cdf")
 np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/full_ar_chi_cost_data.npy',full_chi_data)
 

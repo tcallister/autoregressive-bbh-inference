@@ -104,9 +104,5 @@ mcmc.run(rng_key_,sampleDict,injectionDict,full_lnm1_q_data,\
 
 # Save out data
 data = az.from_numpyro(mcmc)
-#az.to_netcdf(data,"/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_lnm1_q.cdf")
-#np.save('/mnt/ceph/users/tcallister/autoregressive-bbh-inference-data/final-ar_lnm1_q_data.npy',full_lnm1_q_data)
-#az.to_netcdf(data,"./../data/ar_lnm1_q_test.cdf")
-#np.save('./../data/ar_lnm1_q_data_test.npy',full_lnm1_q_data)
 az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q.cdf")
 np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_lnm1_q_data.npy',full_lnm1_q_data)

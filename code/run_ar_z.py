@@ -75,8 +75,6 @@ mcmc.run(rng_key_,sampleDict,injectionDict,full_z_data,\
 
 # Save out data
 data = az.from_numpyro(mcmc)
-#az.to_netcdf(data,"./../data/ar_z_test.cdf")
-#np.save('./../data/ar_z_data_test.npy',full_z_data)
 az.to_netcdf(data,"/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_z.cdf")
 np.save('/project2/kicp/tcallister/autoregressive-bbh-inference-data/ar_z_data.npy',full_z_data)
 
