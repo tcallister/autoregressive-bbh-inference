@@ -137,15 +137,48 @@ def build_ar1(total,new_element):
 
 def compute_prior_params(dR_max,dR_event,deltaX,N_events):
 
+    """
+    Function to compute quantities appearing in our prior on AR(1) process variances and autocorrelation lengths,
+    following discussion in Appendix B
+
+    Parameters
+    ----------
+    dR_max : float
+        Estimate of the maximum allowed variation in the merger rate across the domain
+    dR_event : float
+        Estimate of the maximum allowed variation in the merger rate between event locations
+    deltaX : float
+        Domain width
+    N_events : int
+        Number of observations in our sample
+
+    Returns
+    -------
+    Sigma_sig : float
+        Standard deviation to be used in a Gaussian prior on AR(1) process standard deviation `sigma`
+    Mu_ln_tau : float
+        Mean to be used in a Gaussian prior on AR(1) process' log-autocorrelation length
+    Sig_ln_tau : float
+        Standard deviation to be used in a Gaussian prior on AR(1) process' log-autocorrelation length
+    Sigma_ratio : float
+        Standard deviation to be used in a Gaussian regularization prior on the ratio `sigma/sqrt(tau)`
+    """
+
+    # Compute the 99th percentile of a chi-squared distribution
     q_99 = scipy.special.gammaincinv(1/2,0.99)
+
+    # Compute standard deviation on `sigma` prior, see Eq. B21
     Sigma_sig = np.log(dR_max)/(2.*q_99**0.5*scipy.special.erfinv(0.95))
 
+    # Expected minimum spacing between events; see Eq. B29
     dx_min = -(deltaX/N_events)*np.log(1.-(1.-np.exp(-N_events))/N_events)
+
+    # Mean and standard deviation on `ln_tau` prior, see Eqs. B26 and B30
     Mu_ln_tau = np.log(deltaX/2.)
     Sigma_ln_tau = (np.log(dx_min) - Mu_ln_tau)/(2**0.5*scipy.special.erfinv(1.-2*0.95))
 
+    # Standard deviation on ratio, see Eq. B25
     Sigma_ratio = (np.log(dR_event)/(2.*scipy.special.erfinv(0.95)))*np.sqrt(N_events/(q_99*deltaX))
-    print(dx_min)
 
     return Sigma_sig,Mu_ln_tau,Sigma_ln_tau,Sigma_ratio
 
@@ -243,12 +276,3 @@ def calculate_gaussian_2D(chiEff, chiP, mu_eff, sigma2_eff, mu_p, sigma2_p, cov,
 
     return y
 
-if __name__=="__main__":
-
-    #print("lnm1",compute_prior_params(100,2,4,69))
-    #print("q",compute_prior_params(100,2,1,69))
-    print("z",compute_prior_params(100,10,1,69))
-    #print("chi",compute_prior_params(100,1.5,1,2*69))
-    #print("cost",compute_prior_params(100,1.5,2,2*69))
-    #print("Xeff",compute_prior_params(100,2,2,69))
-    #print("Xp",compute_prior_params(100,2,1,69))
