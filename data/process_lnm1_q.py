@@ -3,7 +3,7 @@ import numpy as np
 import h5py
 
 # Load inference results
-inference_data = az.from_netcdf("/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_lnm1_q.cdf")
+inference_data = az.from_netcdf("/Volumes/LaCie/cca/autoregressive-bbh-inference-data-resubmission/ar_lnm1_q.cdf")
 samps = az.extract(inference_data,var_names=["R20","kappa","f_lnm1s","f_qs","ar_lnm1_std","ar_lnm1_tau","ar_q_std","ar_q_tau",\
                         "mu_chi","logsig_chi","sig_cost","nEff_inj_per_event","min_log_neff"])
 R_ref = samps.R20.values
@@ -21,7 +21,7 @@ nEff_inj_per_event = samps.nEff_inj_per_event.values
 min_log_neff = samps.min_log_neff.values
 
 # Also extract complete set of mass and mass ratio values over which AR process is defined
-lnm1_q_data = np.load('/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_lnm1_q_data.npy',allow_pickle=True)[()]
+lnm1_q_data = np.load('/Volumes/LaCie/cca/autoregressive-bbh-inference-data-resubmission/ar_lnm1_q_data.npy',allow_pickle=True)[()]
 m1_values = np.exp(lnm1_q_data['all_lnm1_samples'])
 q_values = lnm1_q_data['all_q_samples']
 
@@ -42,7 +42,7 @@ f_lnm1_equal_ln20 = f_lnm1s[np.argmin(np.abs(m1_values-20.)),:]
 dR_dqs = R_ref[np.newaxis,:]*f_lnm1_equal_ln20[np.newaxis,:]*f_qs_reduced
 
 # Create hdf5 file and write posterior samples
-hfile = h5py.File('/Volumes/LaCie/cca/autoregressive-bbh-inference-data/ar_lnm1_q_summary.hdf','w')
+hfile = h5py.File('/Volumes/LaCie/cca/autoregressive-bbh-inference-data-resubmission/for-data-release/ar_lnm1_q_summary.hdf','w')
 posterior = hfile.create_group('posterior')
 posterior.create_dataset('m1s',data=m1_values_reduced)
 posterior.create_dataset('qs',data=q_values_reduced)

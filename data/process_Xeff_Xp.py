@@ -6,7 +6,7 @@ sys.path.append('./../code/')
 from utilities import *
 
 # Load inference results
-inference_data = az.from_netcdf("/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_Xeff_Xp.cdf")
+inference_data = az.from_netcdf("/Volumes/LaCie/cca/autoregressive-bbh-inference-data-resubmission/ar_Xeff_Xp.cdf")
 samps = az.extract(inference_data,var_names=["R20","kappa","f_Xeffs","f_Xps","ar_Xeff_std","ar_Xeff_tau","ar_Xp_std","ar_Xp_tau",\
                 "alpha","mu_m1","sig_m1","log_f_peak","mMin","mMax","log_dmMin","log_dmMax","bq",\
                 "nEff_inj_per_event","min_log_neff"])
@@ -32,7 +32,7 @@ nEff_inj_per_event = samps.nEff_inj_per_event.values
 min_log_neff = samps.min_log_neff.values
 
 # Also extract complete set of spin magnitude and tilt values over which AR process is defined
-Xeff_Xp_data = np.load('/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_Xeff_Xp_data.npy',allow_pickle=True)[()]
+Xeff_Xp_data = np.load('/Volumes/LaCie/cca/autoregressive-bbh-inference-data-resubmission/ar_Xeff_Xp_data.npy',allow_pickle=True)[()]
 Xeff_values = Xeff_Xp_data['Xeff_allSamples']
 Xp_values = Xeff_Xp_data['Xp_allSamples']
 
@@ -55,7 +55,7 @@ f_Xeff_equal_005 = f_Xeffs[np.argmin(np.abs(Xeff_values-0.05)),:]
 dR_dXps = R_ref[np.newaxis,:]*f_Xeff_equal_005[np.newaxis,:]*f_Xps_reduced*f_q_equal_1*m_ref
 
 # Create hdf5 file and write posterior samples
-hfile = h5py.File('/Volumes/LaCie/cca/autoregressive-bbh-inference-data/ar_Xeff_Xp_summary.hdf','w')
+hfile = h5py.File('/Volumes/LaCie/cca/autoregressive-bbh-inference-data-resubmission/for-data-release/ar_Xeff_Xp_summary.hdf','w')
 posterior = hfile.create_group('posterior')
 posterior.create_dataset('Xeffs',data=Xeff_values_reduced)
 posterior.create_dataset('Xps',data=Xp_values_reduced)

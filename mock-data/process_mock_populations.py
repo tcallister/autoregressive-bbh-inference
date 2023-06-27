@@ -32,7 +32,7 @@ def process_and_save(cdf_name):
     dR_dchis = R_ref[np.newaxis,:]*fs_reduced
 
     # Create hdf5 file and write posterior samples
-    hfile_name = "{0}_summary.hdf".format(cdf_name.split(".")[0])
+    hfile_name = "/Volumes/LaCie/cca/autoregressive-bbh-inference-data-resubmission/for-data-release/{0}_summary.hdf".format(cdf_name.split(".")[0])
     hfile = h5py.File(hfile_name,'w')
     posterior = hfile.create_group('posterior')
     posterior.create_dataset('chis',data=chi_values_reduced)
@@ -46,7 +46,7 @@ def process_and_save(cdf_name):
 
     # Add some metadata
     hfile.attrs['Created_by'] = "process_mock_populations.py"
-    hfile.attrs['Downloadable_from'] = "10.5281/zenodo.7600141"
+    hfile.attrs['Downloadable_from'] = "10.5281/zenodo.8083994"
     hfile.attrs['Source_code'] = "https://github.com/tcallister/autoregressive-bbh-inference"
 
     hfile.close()

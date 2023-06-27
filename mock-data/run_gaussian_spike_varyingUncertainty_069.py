@@ -74,7 +74,7 @@ kernel = NUTS(ar_model)
 mcmc = MCMC(kernel,num_warmup=400,num_samples=750,num_chains=nChains)
 
 # Choose a random key and run over our model
-rng_key = random.PRNGKey(201)
+rng_key = random.PRNGKey(211)
 rng_key,rng_key_ = random.split(rng_key)
 mcmc.run(rng_key_,sampleDict,injectionDict,full_data,std_std=std_std,ln_tau_mu=ln_tau_mu,ln_tau_std=ln_tau_std,regularization_std=regularization_std)
 mcmc.print_summary()

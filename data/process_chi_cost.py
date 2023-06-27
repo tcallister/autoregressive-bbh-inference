@@ -6,7 +6,7 @@ sys.path.append('./../code/')
 from utilities import *
 
 # Load inference results
-inference_data = az.from_netcdf("/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_chi_cost.cdf")
+inference_data = az.from_netcdf("/Volumes/LaCie/cca/autoregressive-bbh-inference-data-resubmission/ar_chi_cost.cdf")
 samps = az.extract(inference_data,var_names=["R20","kappa","f_chis","f_cost","ar_chi_std","ar_chi_tau","ar_cost_std","ar_cost_tau",\
                 "alpha","mu_m1","sig_m1","log_f_peak","mMin","mMax","log_dmMin","log_dmMax","bq",\
                 "nEff_inj_per_event","min_log_neff"])
@@ -32,7 +32,7 @@ nEff_inj_per_event = samps.nEff_inj_per_event.values
 min_log_neff = samps.min_log_neff.values
 
 # Also extract complete set of spin magnitude and tilt values over which AR process is defined
-chi_cost_data = np.load('/Volumes/LaCie/cca/autoregressive-bbh-inference-data/final-ar_chi_cost_data.npy',allow_pickle=True)[()]
+chi_cost_data = np.load('/Volumes/LaCie/cca/autoregressive-bbh-inference-data-resubmission/ar_chi_cost_data.npy',allow_pickle=True)[()]
 chi_values = chi_cost_data['chi_allSamples']
 cost_values = chi_cost_data['cost_allSamples']
 
@@ -59,7 +59,7 @@ f_chi_equal_01 = f_chis[np.argmin(np.abs(chi_values-0.1)),:]
 dR_dcosts = R_ref[np.newaxis,:]*f_chi_equal_01[np.newaxis,:]**2.*f_costs_reduced**2.*f_q_equal_1*20.
 
 # Create hdf5 file and write posterior samples
-hfile = h5py.File('/Volumes/LaCie/cca/autoregressive-bbh-inference-data/ar_chi_cost_summary.hdf','w')
+hfile = h5py.File('/Volumes/LaCie/cca/autoregressive-bbh-inference-data-resubmission/for-data-release/ar_chi_cost_summary.hdf','w')
 posterior = hfile.create_group('posterior')
 posterior.create_dataset('chis',data=chi_values_reduced)
 posterior.create_dataset('costs',data=cost_values_reduced)
