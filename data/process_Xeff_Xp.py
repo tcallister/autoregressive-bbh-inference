@@ -83,7 +83,7 @@ posterior.create_dataset('min_log_neff',data=min_log_neff)
 
 # Add some metadata
 hfile.attrs['Created_by'] = "process_Xeff_Xp.py"
-hfile.attrs['Downloadable_from'] = "10.5281/zenodo.7600141"
+hfile.attrs['Downloadable_from'] = "10.5281/zenodo.8087858"
 hfile.attrs['Source_code'] = "https://github.com/tcallister/autoregressive-bbh-inference"
 
 hfile.close()

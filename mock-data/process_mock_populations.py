@@ -46,7 +46,7 @@ def process_and_save(cdf_name):
 
     # Add some metadata
     hfile.attrs['Created_by'] = "process_mock_populations.py"
-    hfile.attrs['Downloadable_from'] = "10.5281/zenodo.8083994"
+    hfile.attrs['Downloadable_from'] = "10.5281/zenodo.8087858"
     hfile.attrs['Source_code'] = "https://github.com/tcallister/autoregressive-bbh-inference"
 
     hfile.close()
