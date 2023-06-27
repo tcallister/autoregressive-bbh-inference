@@ -51,6 +51,7 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">utilities module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#utilities.build_ar1"><code class="docutils literal notranslate"><span class="pre">build_ar1()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#utilities.calculate_gaussian_2D"><code class="docutils literal notranslate"><span class="pre">calculate_gaussian_2D()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#utilities.compute_prior_params"><code class="docutils literal notranslate"><span class="pre">compute_prior_params()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#utilities.get_value_from_logit"><code class="docutils literal notranslate"><span class="pre">get_value_from_logit()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#utilities.massModel"><code class="docutils literal notranslate"><span class="pre">massModel()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#utilities.truncatedNormal"><code class="docutils literal notranslate"><span class="pre">truncatedNormal()</span></code></a></li>
@@ -137,6 +138,39 @@ See e.g. <a class="reference external" href="http://mathworld.wolfram.com/Bivari
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl>
 <dt><strong>y</strong><span class="classifier"><cite>np.array</cite></span></dt><dd><p>Array of probability densities</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utilities.compute_prior_params">
+<span class="sig-prename descclassname"><span class="pre">utilities.</span></span><span class="sig-name descname"><span class="pre">compute_prior_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dR_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dR_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deltaX</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_events</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utilities.html#compute_prior_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utilities.compute_prior_params" title="Permalink to this definition"></a></dt>
+<dd><p>Function to compute quantities appearing in our prior on AR(1) process variances and autocorrelation lengths,
+following discussion in Appendix B</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>dR_max</strong><span class="classifier">float</span></dt><dd><p>Estimate of the maximum allowed variation in the merger rate across the domain</p>
+</dd>
+<dt><strong>dR_event</strong><span class="classifier">float</span></dt><dd><p>Estimate of the maximum allowed variation in the merger rate between event locations</p>
+</dd>
+<dt><strong>deltaX</strong><span class="classifier">float</span></dt><dd><p>Domain width</p>
+</dd>
+<dt><strong>N_events</strong><span class="classifier">int</span></dt><dd><p>Number of observations in our sample</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>Sigma_sig</strong><span class="classifier">float</span></dt><dd><p>Standard deviation to be used in a Gaussian prior on AR(1) process standard deviation <cite>sigma</cite></p>
+</dd>
+<dt><strong>Mu_ln_tau</strong><span class="classifier">float</span></dt><dd><p>Mean to be used in a Gaussian prior on AR(1) process’ log-autocorrelation length</p>
+</dd>
+<dt><strong>Sig_ln_tau</strong><span class="classifier">float</span></dt><dd><p>Standard deviation to be used in a Gaussian prior on AR(1) process’ log-autocorrelation length</p>
+</dd>
+<dt><strong>Sigma_ratio</strong><span class="classifier">float</span></dt><dd><p>Standard deviation to be used in a Gaussian regularization prior on the ratio <cite>sigma/sqrt(tau)</cite></p>
 </dd>
 </dl>
 </dd>

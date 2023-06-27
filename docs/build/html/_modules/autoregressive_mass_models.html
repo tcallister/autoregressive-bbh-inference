@@ -73,10 +73,17 @@
 <span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
 <span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">vmap</span><span class="p">,</span><span class="n">lax</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">custom_distributions</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">utilities</span> <span class="kn">import</span> <span class="o">*</span>
 
-<div class="viewcode-block" id="ar_lnm1_q"><a class="viewcode-back" href="../autoregressive_mass_models.html#autoregressive_mass_models.ar_lnm1_q">[docs]</a><span class="k">def</span> <span class="nf">ar_lnm1_q</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">,</span><span class="n">injectionDict</span><span class="p">,</span><span class="n">full_lnm1_q_data</span><span class="p">):</span>
+<div class="viewcode-block" id="ar_lnm1_q"><a class="viewcode-back" href="../autoregressive_mass_models.html#autoregressive_mass_models.ar_lnm1_q">[docs]</a><span class="k">def</span> <span class="nf">ar_lnm1_q</span><span class="p">(</span><span class="n">sampleDict</span><span class="p">,</span><span class="n">injectionDict</span><span class="p">,</span><span class="n">full_lnm1_q_data</span><span class="p">,</span>\
+    <span class="n">lnm1_std_std</span><span class="p">,</span>
+    <span class="n">lnm1_ln_tau_mu</span><span class="p">,</span>
+    <span class="n">lnm1_ln_tau_std</span><span class="p">,</span>
+    <span class="n">lnm1_regularization_std</span><span class="p">,</span>
+    <span class="n">q_std_std</span><span class="p">,</span>
+    <span class="n">q_ln_tau_mu</span><span class="p">,</span>
+    <span class="n">q_ln_tau_std</span><span class="p">,</span>
+    <span class="n">q_regularization_std</span><span class="p">):</span>
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Likelihood model in which the BBH ln(m1) and q distributions are described as AR(1) processes, for use within `numpyro`.</span>
@@ -116,15 +123,14 @@
     <span class="c1"># First get variance of the process</span>
     <span class="c1"># We will sample from a half normal distribution, but override this with a quadratic prior</span>
     <span class="c1"># on the processes&#39; standard deviation; see Eq. B1</span>
-    <span class="n">ar_lnm1_std</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ar_lnm1_std&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;ar_lnm1_std_prior&quot;</span><span class="p">,</span><span class="n">ar_lnm1_std</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="p">(</span><span class="n">ar_lnm1_std</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span><span class="o">**</span><span class="mi">4</span><span class="o">/</span><span class="mf">8.75</span><span class="p">)</span>
+    <span class="n">ar_lnm1_std</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ar_lnm1_std&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="n">lnm1_std_std</span><span class="p">))</span>
 
     <span class="c1"># Next, the autocorrelation length</span>
-    <span class="n">log_ar_lnm1_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;log_ar_lnm1_tau&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.75</span><span class="p">))</span>
-    <span class="n">ar_lnm1_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;ar_lnm1_tau&quot;</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">log_ar_lnm1_tau</span><span class="p">)</span>
+    <span class="n">log_ar_lnm1_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;log_ar_lnm1_tau&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">lnm1_ln_tau_mu</span><span class="p">,</span><span class="n">lnm1_ln_tau_std</span><span class="p">))</span>
+    <span class="n">ar_lnm1_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;ar_lnm1_tau&quot;</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_ar_lnm1_tau</span><span class="p">))</span>
 
     <span class="c1"># As discussed in Appendix B, we need a regularizing log-likelihood factor to help stabilize our inference; see Eq. B3</span>
-    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;lnm1_regularization&quot;</span><span class="p">,</span><span class="o">-</span><span class="p">(</span><span class="n">ar_lnm1_std</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ar_lnm1_tau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="mf">0.5</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;lnm1_regularization&quot;</span><span class="p">,</span><span class="o">-</span><span class="p">(</span><span class="n">ar_lnm1_std</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ar_lnm1_tau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">lnm1_regularization_std</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
 
     <span class="c1"># Sample an initial rate density at the reference mass point</span>
     <span class="c1"># First draw un unscaled variable from N(0,1), then rescale by the standard deviation</span>
@@ -159,13 +165,14 @@
 
     <span class="c1"># Follow the same strategies to construct an AR1 process over mass ratio</span>
     <span class="c1"># First get the process&#39; standard deviation</span>
-    <span class="n">ar_q_std</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ar_q_std&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;ar_q_std_prior&quot;</span><span class="p">,</span><span class="n">ar_q_std</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="p">(</span><span class="n">ar_q_std</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span><span class="o">**</span><span class="mi">4</span><span class="o">/</span><span class="mf">8.75</span><span class="p">)</span>
+    <span class="n">ar_q_std</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ar_q_std&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="n">q_std_std</span><span class="p">))</span>
 
     <span class="c1"># Next the autocorrelation length</span>
-    <span class="n">log_ar_q_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;log_ar_q_tau&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="o">-</span><span class="mf">0.3</span><span class="p">,</span><span class="mf">0.5</span><span class="p">))</span>
-    <span class="n">ar_q_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;ar_q_tau&quot;</span><span class="p">,</span><span class="mf">10.</span><span class="o">**</span><span class="n">log_ar_q_tau</span><span class="p">)</span>
-    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;q_regularization&quot;</span><span class="p">,</span><span class="o">-</span><span class="p">(</span><span class="n">ar_q_std</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ar_q_tau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="mf">0.5</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">log_ar_q_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;log_ar_q_tau&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">q_ln_tau_mu</span><span class="p">,</span><span class="n">q_ln_tau_std</span><span class="p">))</span>
+    <span class="n">ar_q_tau</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;ar_q_tau&quot;</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_ar_q_tau</span><span class="p">))</span>
+
+    <span class="c1"># And regularize</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;q_regularization&quot;</span><span class="p">,</span><span class="o">-</span><span class="p">(</span><span class="n">ar_q_std</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ar_q_tau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">q_regularization_std</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
 
     <span class="c1"># Choose an initial reference value</span>
     <span class="n">ln_f_q_ref_unscaled</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;ln_f_q_ref_unscaled&quot;</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
@@ -222,13 +229,6 @@
     <span class="c1"># merger rate at the desired reference mass and redshift values</span>
     <span class="n">f_z_norm</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="mf">0.2</span><span class="p">)</span><span class="o">**</span><span class="n">kappa</span>
 
-    <span class="c1"># Entropy penalization</span>
-    <span class="c1">#p_lnm1 = f_lnm1s/jnp.trapz(f_lnm1s,all_lnm1_samples)</span>
-    <span class="c1">#p_q = f_qs/jnp.trapz(f_qs,all_q_samples)</span>
-    <span class="c1">#S_lnm1 = -jnp.trapz(p_lnm1*jnp.log(p_lnm1),all_lnm1_samples)</span>
-    <span class="c1">#S_q = -jnp.trapz(p_q*jnp.log(p_q),all_q_samples)</span>
-    <span class="c1">#numpyro.factor(&quot;entropy&quot;,S_lnm1+S_q)</span>
-
     <span class="c1">###############################</span>
     <span class="c1"># Expected number of detections</span>
     <span class="c1">###############################</span>
@@ -271,6 +271,9 @@
     <span class="c1"># Compute total expected number of detections and add to log-likelihood</span>
     <span class="n">Nexp</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">inj_weights</span><span class="p">)</span><span class="o">/</span><span class="n">injectionDict</span><span class="p">[</span><span class="s1">&#39;nTrials&#39;</span><span class="p">]</span>
     <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span><span class="o">-</span><span class="n">Nexp</span><span class="p">)</span>
+
+    <span class="c1"># Penalize</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;Neff_inj_penalty&quot;</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="p">(</span><span class="n">nEff_inj</span><span class="o">/</span><span class="p">(</span><span class="mf">4.</span><span class="o">*</span><span class="n">nObs</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">30.</span><span class="p">))))</span>
 
     <span class="c1">###############################</span>
     <span class="c1"># Compute per-event likelihoods</span>
@@ -316,7 +319,10 @@
                         <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sampleDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;ar_indices&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sampleDict</span><span class="p">]))</span>
         
     <span class="c1"># As a diagnostic, save minimum number of effective samples across all events</span>
-    <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s1">&#39;min_log_neff&#39;</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">n_effs</span><span class="p">)))</span>
+    <span class="n">min_log_neff</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s1">&#39;min_log_neff&#39;</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">n_effs</span><span class="p">)))</span>
+
+    <span class="c1"># Penalize</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;Neff_penalty&quot;</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="p">(</span><span class="n">min_log_neff</span><span class="o">/</span><span class="mf">0.6</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">30.</span><span class="p">))))</span>
 
     <span class="c1"># Tally log-likelihoods across our catalog</span>
     <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;logp&quot;</span><span class="p">,</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_ps</span><span class="p">))</span></div>

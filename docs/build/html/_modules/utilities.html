@@ -205,6 +205,53 @@
     <span class="n">total</span> <span class="o">=</span> <span class="n">c</span><span class="o">*</span><span class="n">total</span><span class="o">+</span><span class="n">w</span>
     <span class="k">return</span> <span class="n">total</span><span class="p">,</span><span class="n">total</span></div>
 
+<div class="viewcode-block" id="compute_prior_params"><a class="viewcode-back" href="../utilities.html#utilities.compute_prior_params">[docs]</a><span class="k">def</span> <span class="nf">compute_prior_params</span><span class="p">(</span><span class="n">dR_max</span><span class="p">,</span><span class="n">dR_event</span><span class="p">,</span><span class="n">deltaX</span><span class="p">,</span><span class="n">N_events</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to compute quantities appearing in our prior on AR(1) process variances and autocorrelation lengths,</span>
+<span class="sd">    following discussion in Appendix B</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dR_max : float</span>
+<span class="sd">        Estimate of the maximum allowed variation in the merger rate across the domain</span>
+<span class="sd">    dR_event : float</span>
+<span class="sd">        Estimate of the maximum allowed variation in the merger rate between event locations</span>
+<span class="sd">    deltaX : float</span>
+<span class="sd">        Domain width</span>
+<span class="sd">    N_events : int</span>
+<span class="sd">        Number of observations in our sample</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Sigma_sig : float</span>
+<span class="sd">        Standard deviation to be used in a Gaussian prior on AR(1) process standard deviation `sigma`</span>
+<span class="sd">    Mu_ln_tau : float</span>
+<span class="sd">        Mean to be used in a Gaussian prior on AR(1) process&#39; log-autocorrelation length</span>
+<span class="sd">    Sig_ln_tau : float</span>
+<span class="sd">        Standard deviation to be used in a Gaussian prior on AR(1) process&#39; log-autocorrelation length</span>
+<span class="sd">    Sigma_ratio : float</span>
+<span class="sd">        Standard deviation to be used in a Gaussian regularization prior on the ratio `sigma/sqrt(tau)`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Compute the 99th percentile of a chi-squared distribution</span>
+    <span class="n">q_99</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">gammaincinv</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mf">0.99</span><span class="p">)</span>
+
+    <span class="c1"># Compute standard deviation on `sigma` prior, see Eq. B21</span>
+    <span class="n">Sigma_sig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dR_max</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">q_99</span><span class="o">**</span><span class="mf">0.5</span><span class="o">*</span><span class="n">scipy</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">erfinv</span><span class="p">(</span><span class="mf">0.95</span><span class="p">))</span>
+
+    <span class="c1"># Expected minimum spacing between events; see Eq. B29</span>
+    <span class="n">dx_min</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">deltaX</span><span class="o">/</span><span class="n">N_events</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">N_events</span><span class="p">))</span><span class="o">/</span><span class="n">N_events</span><span class="p">)</span>
+
+    <span class="c1"># Mean and standard deviation on `ln_tau` prior, see Eqs. B26 and B30</span>
+    <span class="n">Mu_ln_tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">deltaX</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+    <span class="n">Sigma_ln_tau</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dx_min</span><span class="p">)</span> <span class="o">-</span> <span class="n">Mu_ln_tau</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mf">0.5</span><span class="o">*</span><span class="n">scipy</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">erfinv</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="mf">0.95</span><span class="p">))</span>
+
+    <span class="c1"># Standard deviation on ratio, see Eq. B25</span>
+    <span class="n">Sigma_ratio</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dR_event</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">scipy</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">erfinv</span><span class="p">(</span><span class="mf">0.95</span><span class="p">)))</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">N_events</span><span class="o">/</span><span class="p">(</span><span class="n">q_99</span><span class="o">*</span><span class="n">deltaX</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">Sigma_sig</span><span class="p">,</span><span class="n">Mu_ln_tau</span><span class="p">,</span><span class="n">Sigma_ln_tau</span><span class="p">,</span><span class="n">Sigma_ratio</span></div>
+
 <div class="viewcode-block" id="truncated_gaussian"><a class="viewcode-back" href="../utilities.html#utilities.truncated_gaussian">[docs]</a><span class="k">def</span> <span class="nf">truncated_gaussian</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span><span class="n">mu</span><span class="p">,</span><span class="n">sigma</span><span class="p">,</span><span class="n">low_cutoff</span><span class="p">,</span><span class="n">high_cutoff</span><span class="p">):</span>
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -298,6 +345,7 @@
     <span class="n">y</span><span class="p">[</span><span class="n">chiEff</span><span class="o">&lt;</span><span class="n">chi_min</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
 
     <span class="k">return</span> <span class="n">y</span></div>
+
 </pre></div>
 
            </div>

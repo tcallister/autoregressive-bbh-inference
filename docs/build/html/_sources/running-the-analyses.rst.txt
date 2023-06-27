@@ -198,3 +198,59 @@ This script will load the two files above and create a single (much smaller!) ou
 .. note::
 
     A notebook that demonstrates how to load in, inspect, and manipulate this output file can be found `here <https://github.com/tcallister/autoregressive-bbh-inference/blob/main/data/inspect_ar_Xeff_Xp_results.ipynb>`__
+
+Analysis of synthetic catalogs
+------------------------------
+
+In Appendix C of our paper, we perform a series of inference exercises on mock data sets consistent with several different populations.
+To repeat this analysis, first regenerate the mock data sets by opening and running the notebook `mock-data/gen_fake_samples.ipynb <https://github.com/tcallister/autoregressive-bbh-inference/blob/main/mock-data/gen_fake_samples.ipynb>`__.
+This will generate four files:
+
+.. code-block:: bash
+
+    mock-data/gaussian_samples_varyingUncertainty.npy
+    mock-data/spike_samples_varyingUncertainty.npy
+    mock-data/gaussian_spike_samples_varyingUncertainty.npy
+    mock-data/half_normal_samples_varyingUncertainty
+
+Each file contains a dictionary with 300 elements, corresponding to mock posteriors for 300 simulated observations from each respective population.
+After these files are generated, inference on the first 69 events of each sample is accomplished by running each of the following scripts:
+
+.. code-block:: bash
+
+    mock-data/run_gaussian_varyingUncertainty_069.py
+    mock-data/run_spike_varyingUncertainty_069.py
+    mock-data/run_gaussian_spike_varyingUncertainty_069.py
+    mock-data/run_half_normal_varyingUncertainty_069.py
+
+The result will accordingly be four pairs of output files, each pair of the form
+
+.. code-block:: bash
+
+    mock-data/ar_gaussian_varyingUncertainty_069.cdf
+    mock-data/ar_gaussian_varyingUncertainty_069_data.npy
+
+As above, the `.cdf` files will contain the full inference output, including diagnostics and hyperposterior samples.
+The `.npy` files, in turn, will contain the union of all posterior samples and injections comprising our dataset, and information needed to sort/unsort them to the AR(1) process posteriors.
+
+When each analysis is complete, the results are distilled into a set of much smaller output files using
+
+.. code-block:: bash
+
+    $ cd mock-data/
+    $ python process_mock_populations.py
+
+This script will produce a final set of four files:
+
+.. code-block:: bash
+
+    mock-data/ar_gaussian_varyingUncertainty_069_summary.hdf
+    mock-data/ar_spike varyingUncertainty_069_summary.hdf
+    mock-data/ar_gaussian_spike_varyingUncertainty_069_summary.hdf
+    mock-data/ar_half_normal_varyingUncertainty_069_summary.hdf
+
+These are the files that will be used for subsequent analysis and figure generation.
+
+.. note::
+
+    A notebook that demonstrates how to load in, inspect, and manipulate these output file can be found `here <https://github.com/tcallister/autoregressive-bbh-inference/blob/main/mock-data/inspect_mock_results.ipynb>`__
