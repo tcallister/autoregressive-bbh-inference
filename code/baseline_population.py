@@ -4,7 +4,6 @@ import jax.numpy as jnp
 from jax.scipy.special import erf
 from jax import soft_pmap,vmap,lax
 import numpy as np
-from custom_distributions import *
 from utilities import *
 
 def baseline(sampleDict,injectionDict):

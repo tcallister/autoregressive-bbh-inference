@@ -13,7 +13,7 @@ To set up this environment, do the following:
 
 .. code-block:: bash
 
-    $ conda env create -f environment.yaml
+    $ conda env create -f environment.yml
 
 This will create a new conda environment named *autoregressive-bbh-inference*
 
