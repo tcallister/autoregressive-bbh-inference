@@ -1,6 +1,6 @@
-\newcommand{\ComponentMagTailHighTwo}{0.92}
-\newcommand{\ComponentMagTailHighFour}{0.85}
-\newcommand{\ComponentTiltTailLowTwo}{-0.96}
-\newcommand{\ComponentTiltTailLowFour}{-0.91}
-\newcommand{\ComponenttiltTailHighTwo}{0.97}
-\newcommand{\ComponenttiltTailHighFour}{0.95}
+\newcommand{\ComponentMagTailHighTwo}{0.90^{+0.08}_{-0.26}}
+\newcommand{\ComponentMagTailHighFour}{0.82^{+0.13}_{-0.29}}
+\newcommand{\ComponentTiltTailLowTwo}{-0.96^{+0.12}_{-0.03}}
+\newcommand{\ComponentTiltTailLowFour}{-0.91^{+0.19}_{-0.06}}
+\newcommand{\ComponentTiltTailHighTwo}{0.97^{+0.02}_{-0.05}}
+\newcommand{\ComponentTiltTailHighFour}{0.95^{+0.03}_{-0.06}}

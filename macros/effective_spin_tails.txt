@@ -1,8 +1,8 @@
-\newcommand{\EffectiveSpinTailLowTwo}{-0.35}
-\newcommand{\EffectiveSpinTailLowFour}{-0.17}
-\newcommand{\EffectiveSpinTailHighTwo}{0.53}
-\newcommand{\EffectiveSpinTailHighFour}{0.35}
-\newcommand{\PrecessingSpinTailLowTwo}{0.02}
-\newcommand{\PrecessingSpinTailLowFour}{0.02}
-\newcommand{\PrecessingSpinTailHighTwo}{0.89}
-\newcommand{\PrecessingSpinTailHighFour}{0.78}
+\newcommand{\EffectiveSpinTailLowTwo}{-0.29^{+0.22}_{-0.45}}
+\newcommand{\EffectiveSpinTailLowFour}{-0.14^{+0.12}_{-0.38}}
+\newcommand{\EffectiveSpinTailHighTwo}{0.49^{+0.31}_{-0.29}}
+\newcommand{\EffectiveSpinTailHighFour}{0.33^{+0.33}_{-0.16}}
+\newcommand{\PrecessingSpinTailLowTwo}{0.02^{+0.03}_{-0.01}}
+\newcommand{\PrecessingSpinTailLowFour}{0.03^{+0.06}_{-0.01}}
+\newcommand{\PrecessingSpinTailHighTwo}{0.84^{+0.14}_{-0.44}}
+\newcommand{\PrecessingSpinTailHighFour}{0.73^{+0.22}_{-0.41}}
