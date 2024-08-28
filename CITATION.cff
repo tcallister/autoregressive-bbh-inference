@@ -1,9 +1,9 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite this repository and the accompanying paper as below."
 authors:
-- family-names: "Callister"
-  given-names: "T"
-  orcid: "https://orcid.org/0000-0001-9892-177X"
+  - family-names: "Callister"
+    given-names: "T"
+    orcid: "https://orcid.org/0000-0001-9892-177X"
 title: "autoregressive-bbh-inference"
 version: 1.0.0
 doi: 10.5281/zenodo.1234
@@ -12,12 +12,12 @@ url: "https://github.com/tcallister/autoregressive-bbh-inference"
 preferred-citation:
   type: article
   authors:
-  - family-names: "Callister"
-    given-names: "T."
-    orcid: "https://orcid.org/0000-0001-9892-177X"
-  - family-names: "Farr"
-    given-names: "W."
-    orcid: "https://orcid.org/0000-0003-1540-8562"
+    - family-names: "Callister"
+      given-names: "T."
+      orcid: "https://orcid.org/0000-0001-9892-177X"
+    - family-names: "Farr"
+      given-names: "W."
+      orcid: "https://orcid.org/0000-0003-1540-8562"
   doi: "10.1103/PhysRevX.14.021005"
   journal: "Physical Review X"
   month: "Apr"
